@@ -1,0 +1,4 @@
+
+Projectile bullets, hitbox gets bigger over distance
+
+https://www.youtube.com/watch?v=d7pwmO6IS2I
