@@ -13,7 +13,6 @@ public class Player : Client
 
     protected override void OnConnect()
     {
-        // IDK
         CurrentPawn = new GameObject(SteamName + " Lobby VC");
         AudioSource source = CurrentPawn.AddComponent<AudioSource>();
         VoiceOutput = CurrentPawn.AddComponent<VoiceOutput>();

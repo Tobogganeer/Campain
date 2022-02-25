@@ -1,7 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System;
+
+//https://answers.unity.com/questions/1358491/character-controller-slide-down-slope.html
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -11,269 +12,120 @@ public class PlayerMovement : MonoBehaviour
         instance = this;
     }
 
-    public PlayerPawn player;
+    private CharacterController controller;
 
-    /*
-    public CharacterController Controller => instance.controller;
+    public float speed = 5;
+    public float slopeLimit = 45;
+    public float slideFriction = 0.3f;
+    public float gravity = 10f;
+    public float acceleration = 12f;
 
+    [Space]
+    public Vector3 groundNormal;
+    public bool grounded;
+    private bool wasGrounded;
 
-    [Header("Change")]
-    public MovementProfile movementProfile;
-    //[Min(0f)] public float walkingSpeed = 4;
-    //[Min(0f)] public float runningSpeed = 6;
-    [Min(0f)] public float speedChangeSmoothing = 5;
-    private float currentSpeed;
+    //public bool onSlope;
+    public float timeOnSlope;
+    public bool groundNear;
 
+    public float y;
 
-    [Header("Don't change")]
-    public float groundedRaycastSize = 0.5f;
-    public float groundedRaycastLength = 0.6f;
-    [Min(10f)] public float maxFallSpeed = 35;
+    const float DOWNFORCE = 3f;
+    //float slopeMult;
 
-    public float downforce = -2;
-
-    public LayerMask groundLayermask;
-
-
-    public bool grounded { get; private set; }
-    public bool wasGrounded { get; private set; }
-
-    private Vector3 currentVelocity;
-    private Vector3 desiredVelocity;
-    private Vector3 transformedDesiredVelocity;
-    private Vector3 actualVelocity;
-
-    private Vector3 lastPos;
-
-    /// <summary>
-    /// The the velocity that the controller will move. Includes downforce and gravity
-    /// </summary>
-    public Vector3 CurrentVelocity => currentVelocity;
-    /// <summary>
-    /// The desired velocity in world space
-    /// </summary>
-    public Vector3 DesiredVelocity => desiredVelocity;
-    /// <summary>
-    /// The desired velocity in local space, with speed applied
-    /// </summary>
-    public Vector3 TransformedDesiredVelocity => transformedDesiredVelocity;
-    /// <summary>
-    /// The difference between the controllers last and current position
-    /// </summary>
-    public Vector3 ActualVelocity => actualVelocity;
-    /// <summary>
-    /// The actual velocity of the character, in local space
-    /// </summary>
-    public Vector3 LocalActualVelocity { get; private set; }
-
-    public bool Moving => actualVelocity.Flattened().sqrMagnitude > 0.05f && desiredVelocity.sqrMagnitude > 0.05f;
-    public bool Sprinting => Input.GetKey(Inputs.Sprint);
-
-    /// <summary>
-    /// A value between 0-1 depending on if the player is walking or running
-    /// </summary>
-    public float NormalizedSpeed => Mathf.InverseLerp(GetWalkingSpeed(), GetRunningSpeed(), currentSpeed);
-
-    /// <summary>
-    /// A value between 0-1, where 0 is stationary and 1 is moving current max speed (walk speed or sprint speed, dependantly).
-    /// </summary>
-    public float FromStillToMaxSpeed01 => Mathf.InverseLerp(-currentSpeed, currentSpeed, currentVelocity.Flattened().magnitude) * 2 - 1;
-
-    public static event Action<float> OnLand;
-    private float airtime;
-
-    public bool crouching;
-    public bool running;
-
-    private PlayerStamina stamina;
-
+    Vector3 desiredVelocity;
+    Vector3 moveVelocity;
+    Vector3 actualVelocity;
+    Vector3 lastPos;
+    float slopeTime;
 
     private void Start()
     {
         controller = GetComponent<CharacterController>();
-        actualVelocity = Vector3.zero;
+        controller.slopeLimit = 80;
         lastPos = transform.position;
-        stamina = new PlayerStamina(player);
+        slopeTime = 1;
     }
+
+    void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        groundNormal = hit.normal;
+    }
+
 
     private void Update()
     {
-        if (controller == null) controller = GetComponent<CharacterController>();
-
-        Inputs.Update();
-        crouching = Input.GetKey(Inputs.Crouch) || Input.GetKey(KeyCode.LeftControl);
-        running = Sprinting && stamina.currentStamina > 0f && Moving && DesiredVelocity.z > 0f && Mathf.Abs(DesiredVelocity.x) < 0.5f;
-
-        UpdateGrounded();
-
-        UpdateSpeed();
-
         Move();
 
-        UpdateFOV();
-
-        UpdateStamina();
-
-        wasGrounded = grounded;
         actualVelocity = (transform.position - lastPos) / Time.deltaTime;
-        LocalActualVelocity = transform.InverseTransformDirection(actualVelocity);
         lastPos = transform.position;
     }
 
     private void Move()
     {
-        //desiredVelocity.x = Inputs.Horizontal;
-        //desiredVelocity.z = Inputs.Vertical;
+        Vector2 input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        input.Normalize();
 
-        desiredVelocity.x = Inputs.HorizontalNoSmooth;
-        desiredVelocity.z = Inputs.VerticalNoSmooth;
-        // Sets the desired velocity
+        desiredVelocity = transform.right * input.x + transform.forward * input.y;
+        desiredVelocity *= speed;
 
-        transformedDesiredVelocity = transform.right * desiredVelocity.x + transform.forward * desiredVelocity.z;
-        transformedDesiredVelocity = Vector3.ClampMagnitude(transformedDesiredVelocity, 1);
-        transformedDesiredVelocity *= currentSpeed;
+        y -= gravity * Time.deltaTime;
 
-        float accel = grounded ? movementProfile.groundAcceleration : movementProfile.airAcceleration;
+        if (grounded) y = -DOWNFORCE;
 
-        float y = currentVelocity.y;
+        if (timeOnSlope > 0.2f && groundNear)
+            desiredVelocity = Vector3.zero;
 
-        //Vector3 flatVel = currentVelocity.Flattened(); 
-
-        Vector3 flatVel = actualVelocity.Flattened(); // Possible breaking change!
-
-        currentVelocity = Vector3.Lerp(flatVel, transformedDesiredVelocity, Time.deltaTime * accel).WithY(y);
-
-        if (grounded)
+        if (timeOnSlope > 0.2f)
         {
-            if (!wasGrounded)
+            //moveDir = Vector3.zero;
+            if (groundNear)
             {
-                OnLand?.Invoke(airtime);
-                airtime = 0;
-            }
-
-            currentVelocity.y = -downforce;
-        }
-        else
-        {
-            airtime += Time.deltaTime;
-        }
-
-        currentVelocity.y = Mathf.Clamp(currentVelocity.y - movementProfile.gravity * Time.deltaTime, -maxFallSpeed, 5000);
-        // Adds gravity and also clamps the max vertical speed
-
-        controller.Move(currentVelocity * Time.deltaTime);
-
-        //Debug.Log("Current: " + currentVelocity + " - Actual: " + actualVelocity);
-    }
-
-    private void UpdateFOV()
-    {
-        //float value = Moving && Sprinting ? NormalizedSpeed : 0f;
-        float value = running ? NormalizedSpeed : 0f;
-        float multiplier = 1f + value * 0.3f; // Will go between 1 and 1.3
-
-        CameraFOV.Set(multiplier);
-    }
-
-    private void UpdateGrounded()
-    {
-        grounded = Physics.CheckSphere(transform.position + Vector3.down * (groundedRaycastLength + controller.skinWidth), groundedRaycastSize, groundLayermask);
-
-        //grounded = Physics.SphereCast(new Ray(transform.position, Vector3.down), groundedRaycastSize, groundedRaycastLength + controller.skinWidth, groundLayermask);
-        //applyDownforce = Physics.SphereCast(new Ray(transform.position, Vector3.down), downforceCheckSize, downforceCheckLength + controller.skinWidth, groundLayermask);
-    }
-
-    private void UpdateSpeed()
-    {
-        //bool canRun = LocalActualVelocity.z > 0f && Mathf.Abs(LocalActualVelocity.x) < 0.5f;
-        bool canRun = stamina.currentStamina > 0f && DesiredVelocity.z > 0f && Mathf.Abs(DesiredVelocity.x) < 0.5f;
-        float desiredSpeed = Sprinting && Moving && canRun ? GetRunningSpeed() : GetWalkingSpeed();
-
-        if (grounded)
-            currentSpeed = Mathf.Lerp(currentSpeed, desiredSpeed, Time.deltaTime * speedChangeSmoothing);
-        else
-            currentSpeed = Mathf.Max(currentSpeed, Mathf.Lerp(currentSpeed, desiredSpeed, Time.deltaTime * speedChangeSmoothing));
-    }
-
-    private void UpdateStamina()
-    {
-        stamina.UpdateStamina(running);
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-        if (controller == null) controller = GetComponent<CharacterController>();
-
-        Gizmos.color = Color.red;
-        Gizmos.DrawSphere(transform.position + Vector3.down * (groundedRaycastLength + controller.skinWidth), groundedRaycastSize);
-        //Gizmos.color = Color.black;
-        //Gizmos.DrawSphere(transform.position, crouchRaycastSize / 2f);
-
-        // Just draws the ground check rays so you can make sure they intersect the ground
-    }
-
-    //private void OnGUI()
-    //{
-    //    GUILayout.BeginVertical();
-    //    GUILayout.Box("Local Velocity: " + LocalActualVelocity);
-    //    //GUILayout.Box("Velocity: " + actualVelocity);
-    //    //
-    //    //GUILayout.Box("Desired Velocity: " + transformedDesiredVelocity);
-    //}
-
-
-    public float GetWalkingSpeed()
-    {
-        if (player.IsScourge)
-        {
-            return GetSpeed(PlayerSpeeds.ScourgeWalking);
-        }
-        else
-        {
-            return GetSpeed(PlayerSpeeds.AstronautWalking);
-        }
-    }
-
-    public float GetRunningSpeed()
-    {
-        if (player.IsScourge)
-        {
-            return GetSpeed(PlayerSpeeds.ScourgeRunning);
-        }
-        else
-        {
-            return GetSpeed(PlayerSpeeds.AstronautRunning);
-        }
-    }
-
-    private float GetSpeed(float baseSpeed)
-    {
-        if (player.IsScourge)
-        {
-            if (player.HasOxygen) baseSpeed *= PlayerSpeeds.ScourgeOxMul;
-            else baseSpeed *= PlayerSpeeds.ScourgeNoOxMul;
-
-            if (crouching) baseSpeed *= PlayerSpeeds.ScourgeCrouchingMul;
-
-            return baseSpeed;
-        }
-        else
-        {
-            if (player.HasOxygen)
-            {
-                if (player.suited) baseSpeed *= PlayerSpeeds.AstronautSuitedOxMul;
-                else baseSpeed *= PlayerSpeeds.AstronautUnsuitedOxMul;
+                slopeTime += Time.deltaTime * 5;
+                y = -DOWNFORCE * slopeTime;
             }
             else
-            {
-                if (player.suited) baseSpeed *= PlayerSpeeds.AstronautSuitedNoOxMul;
-                else baseSpeed *= PlayerSpeeds.AstronautUnsuitedNoOxMul;
-            }
+                slopeTime = 1f;
 
-            if (crouching) baseSpeed *= PlayerSpeeds.AstronautCrouchingMul;
-
-            return baseSpeed;
+            //moveVelocity.x += /*(1f - groundNormal.y) **/ groundNormal.x /* slopeMult */ * (1f - slideFriction);
+            //moveVelocity.z += /*(1f - groundNormal.y) **/ groundNormal.z /* slopeMult */ * (1f - slideFriction);
+            desiredVelocity.x += groundNormal.x * slopeTime * (1f - slideFriction);
+            desiredVelocity.z += groundNormal.z * slopeTime * (1f - slideFriction);
+            //actualVelocity.x += groundNormal.x * slopeTime * (1f - slideFriction);
+            //actualVelocity.z += groundNormal.z * slopeTime * (1f - slideFriction);
         }
+        else
+        {
+            slopeTime = 1f;
+        }
+
+        if (wasGrounded && !grounded)
+            y += DOWNFORCE;
+
+        //moveDir.y = y;
+
+        Vector3 flatVel = actualVelocity.Flattened();
+        //if (actualVelocity.y > 0)
+            //y = actualVelocity.y;
+            //this.moveVelocity.y = actualVelocity.y;
+
+        this.moveVelocity = Vector3.Lerp(flatVel, desiredVelocity, Time.deltaTime * acceleration).WithY(y);
+
+        controller.Move(this.moveVelocity * Time.deltaTime);
+
+        if (Vector3.Angle(Vector3.up, groundNormal) > slopeLimit)
+            timeOnSlope += Time.deltaTime;
+        else
+            timeOnSlope = 0f;
+        //grounded = !onSlope;
+
+        wasGrounded = grounded;
+        grounded = Physics.SphereCast(new Ray(transform.position, Vector3.down), 0.475f, 1.2f);
+
+        groundNear = Physics.Raycast(new Ray(transform.position, Vector3.down), 1.8f);
+
+        if (!Physics.CheckSphere(transform.position + Vector3.down * 1.2f, 0.55f))
+            groundNormal = Vector3.down;
     }
-    */
 }

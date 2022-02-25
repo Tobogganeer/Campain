@@ -7,12 +7,23 @@ public class PlayerPawn : MonoBehaviour
 {
     [Header("Both")]
     public Player player;
-    public PlayerMovement movement;
+    public PlayerMovementDSM movement;
     public FPSCamera cam;
     public VoiceOutput voiceOutput;
+    public PlayerAnimation animator;
     public ClientNetworkTransform netTransform;
 
     public bool IsLocalPlayer => player.IsLocalPlayer;
+
+    public bool Crouching
+    {
+        get
+        {
+            if (movement != null) return movement.crouching;
+            else return animator.crouching;
+        }
+    }
+
     private void Start()
     {
         netTransform.ownerClient = player;
@@ -25,11 +36,9 @@ public class PlayerPawn : MonoBehaviour
 
     private void Update()
     {
-
-
         if (IsLocalPlayer)
         {
-
+            
         }
     }
 }

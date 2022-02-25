@@ -79,15 +79,15 @@ public static class Settings
 
     public static void Apply()
     { 
-        //QualityManager.SetQualityLevel(CurrentSettings.qualityLevel);
-        //QualityManager.SetMaxFramerate(CurrentSettings.maxFramerate);
-        //QualityManager.SetVSync(CurrentSettings.vsync);
+        QualityManager.SetQualityLevel(CurrentSettings.qualityLevel);
+        QualityManager.SetMaxFramerate(CurrentSettings.maxFramerate);
+        QualityManager.SetVSync(CurrentSettings.vsync);
 
         AudioManager.SetMasterVolume(CurrentSettings.masterVolume / 100f);
         AudioManager.SetAmbientVolume(CurrentSettings.ambientVolume / 100f);
         AudioManager.SetSFXVolume(CurrentSettings.sfxVolume / 100f);
 
-        //FPSCamera.CurrentSensFromSettings = CurrentSettings.sensitivity;
+        FPSCamera.CurrentSensFromSettings = CurrentSettings.sensitivity;
         AudioManager.SetLowPass(1f);
     }
 }

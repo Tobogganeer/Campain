@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
-using UnityEditor.Experimental.SceneManagement;
+
 #endif
 
 namespace VirtualVoid.Net
@@ -188,14 +188,14 @@ namespace VirtualVoid.Net
                 AssignAssetID(gameObject);
             }
 
-            else if (PrefabStageUtility.GetCurrentPrefabStage() != null)
+            else if (UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage() != null)
             {
-                if (PrefabStageUtility.GetPrefabStage(gameObject) != null)
+                if (UnityEditor.SceneManagement.PrefabStageUtility.GetPrefabStage(gameObject) != null)
                 {
                     // force 0 for prefabs
                     sceneID = 0;
 
-                    string path = PrefabStageUtility.GetCurrentPrefabStage().assetPath;
+                    string path = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage().assetPath;
 
                     AssignAssetID(path);
                 }

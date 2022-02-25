@@ -8,7 +8,17 @@ public static class Inputs
     public static KeyCode Left => Profile.left;
     public static KeyCode Right => Profile.right;
     public static KeyCode Backwards => Profile.backwards;
-    public static KeyCode Special => Profile.special;
+
+    public static KeyCode Sprint => Profile.sprint;
+    public static KeyCode Crouch => Profile.crouch;
+    public static KeyCode Jump => Profile.jump;
+
+    //public static KeyCode Fire => inputProfile.fire;
+    //public static KeyCode Reload => inputProfile.reload;
+    //public static KeyCode Inspect => inputProfile.inspect;
+    public static KeyCode Interact => Profile.interact;
+    public static KeyCode ADS => Profile.ads;
+    public static KeyCode Fire => Profile.fire;
 
     private static InputProfile profile;
     public static InputProfile Profile

@@ -1,0 +1,6 @@
+
+WEAPONS:
+Unified blend file that contains all arms, weapons bones etc
+Then specific blend files for each weapon (to not deal with parenting crap)
+
+Weapons can customize barrel, sights, and barrel attach (flashlight, laser etc)

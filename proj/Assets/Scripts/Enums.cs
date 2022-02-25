@@ -1,4 +1,10 @@
 
+public enum Foot : byte
+{
+    Left,
+    Right
+}
+
 public enum Level : byte
 {
     MainMenu,
@@ -8,6 +14,9 @@ public enum Level : byte
 public enum AudioArray : byte
 {
     Null,
+    RightFoot,
+    LeftFoot,
+    Drop,
     UIHover,
     UIClick,
 }
@@ -32,11 +41,13 @@ public enum GameStage : byte
     Game
 }
 
-public enum Direction : byte
+public enum WeaponType
 {
     None,
-    Forward,
-    Backward,
-    Left,
-    Right,
+    P3K,
+    Nateva,
+    FNAL,
+    Molkor,
+    GR3_N,
+    XRM
 }

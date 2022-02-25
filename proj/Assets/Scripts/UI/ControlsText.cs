@@ -9,8 +9,8 @@ public class ControlsText : MonoBehaviour
     private void Start()
     {
         text.text = @$"
-Movement: {Inputs.Forward}{Inputs.Left}{Inputs.Backwards}{Inputs.Right}
-Special: {Inputs.Special}
+Movement: 
+Special: 
 Console: ~
 ";
     }
