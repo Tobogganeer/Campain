@@ -26,13 +26,16 @@ public class FPSCamera : MonoBehaviour
 
     public static float CurrentSensFromSettings = 50;
 
-    //[Space]
-    //public float recoilDecaySpeed = 10;
-    ////public float recoilSmoothSpeed = 5;
-    //private static float currentRecoil;
-    //private static float desiredRecoil;
+    public static float VerticalDip = 0f;
 
-    // ^^^ May be useful when getting hit by scourge
+    private const float EyeHeight = 0.8f;
+    private const float VertDipSmoothing = 4;
+    private const float VertDipSpeed = 6;
+
+    [Space]
+    public float recoilDecaySpeed = 10;
+    private static float currentRecoil;
+    private static float desiredRecoil;
 
 
     int warningCounter = 0; // To not spam warnings in the console every frame
@@ -45,10 +48,10 @@ public class FPSCamera : MonoBehaviour
 
     private void Update()
     {
-        //desiredRecoil = Mathf.Lerp(desiredRecoil, 0, Time.deltaTime * recoilDecaySpeed);
-        //yRotation -= desiredRecoil * Time.deltaTime;
+        desiredRecoil = Mathf.Lerp(desiredRecoil, 0, Time.deltaTime * recoilDecaySpeed);
+        yRotation -= desiredRecoil * Time.deltaTime;
 
-        //if (desiredRecoil < 0) desiredRecoil = 0;
+        if (desiredRecoil < 0) desiredRecoil = 0;
 
         if (playerBody == null || verticalTransform == null)
         {
@@ -68,15 +71,15 @@ public class FPSCamera : MonoBehaviour
         // Rotates the body horizontally
 
         yRotation = Mathf.Clamp(yRotation - y * sensitivity, -maxVerticalRotation, maxVerticalRotation);
-        float clampedRotWithRecoil = yRotation;
-        //float clampedRotWithRecoil = Mathf.Clamp(yRotation - currentRecoil, -maxVerticalRotation, maxVerticalRotation);
+        //float clampedRotWithRecoil = yRotation;
+        float clampedRotWithRecoil = Mathf.Clamp(yRotation - currentRecoil, -maxVerticalRotation, maxVerticalRotation);
 
         // Clamps the Y rotation so you can only look straight up or down, not backwards
         verticalTransform.localRotation = Quaternion.Euler(new Vector3(clampedRotWithRecoil, 0));
-        // Sets the verticalTransforms rotation
-        // Cannot call the Rotate() method on verticalTransform because trying to clamp the y value
-        // makes Euler roll in his grave and messes it up.
-        // Storing the rotation, clamping it and then applying it fixed the problem.
+        verticalTransform.localPosition = Vector3.Lerp(verticalTransform.localPosition, Vector3.down * (VerticalDip - EyeHeight), Time.deltaTime * VertDipSmoothing);
+
+        //VerticalDip = Mathf.MoveTowards(VerticalDip, 0, Time.deltaTime * VertDipSpeed);
+        VerticalDip = Mathf.Lerp(VerticalDip, 0, Time.deltaTime * VertDipSpeed);
     }
 
     public void LookAt_Local(Vector3 point)
@@ -100,8 +103,8 @@ public class FPSCamera : MonoBehaviour
         Shaker.ShakeAllSeparate(preset);
     }
 
-    //public static void AddRecoil(float amount)
-    //{
-    //    desiredRecoil += amount;
-    //}
+    public static void AddRecoil(float amount)
+    {
+        desiredRecoil += amount;
+    }
 }
