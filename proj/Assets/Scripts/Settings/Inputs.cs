@@ -20,6 +20,9 @@ public static class Inputs
     public static KeyCode ADS => Profile.ads;
     public static KeyCode Fire => Profile.fire;
 
+    public static KeyCode LeanLeft => Profile.leanLeft;
+    public static KeyCode LeanRight => Profile.leanRight;
+
     private static InputProfile profile;
     public static InputProfile Profile
     {

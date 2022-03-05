@@ -2,3 +2,9 @@
 Projectile bullets, hitbox gets bigger over distance
 
 https://www.youtube.com/watch?v=d7pwmO6IS2I
+
+
+Dont jump when roof above
+Reset y vel if touch roof
+
+Reduce speed momentarily on hard landing

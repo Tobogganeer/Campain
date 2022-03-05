@@ -12,7 +12,8 @@ public class FPSCamera : MonoBehaviour
     }
 
     public Transform playerBody;
-    public Transform verticalTransform;
+    public Transform lookTransform;
+    public Transform vertMoveTransform;
 
     private float yRotation;
 
@@ -28,6 +29,7 @@ public class FPSCamera : MonoBehaviour
 
     public static float VerticalDip = 0f;
 
+    private const float CrouchOffset = 1f;
     private const float EyeHeight = 0.8f;
     private const float VertDipSmoothing = 4;
     private const float VertDipSpeed = 6;
@@ -37,6 +39,9 @@ public class FPSCamera : MonoBehaviour
     private static float currentRecoil;
     private static float desiredRecoil;
 
+    public static bool Crouched;
+
+    public static Vector3 ViewDir => instance.transform.forward;
 
     int warningCounter = 0; // To not spam warnings in the console every frame
 
@@ -53,7 +58,7 @@ public class FPSCamera : MonoBehaviour
 
         if (desiredRecoil < 0) desiredRecoil = 0;
 
-        if (playerBody == null || verticalTransform == null)
+        if (playerBody == null || lookTransform == null)
         {
             warningCounter++;
             if (warningCounter > 60)
@@ -75,8 +80,10 @@ public class FPSCamera : MonoBehaviour
         float clampedRotWithRecoil = Mathf.Clamp(yRotation - currentRecoil, -maxVerticalRotation, maxVerticalRotation);
 
         // Clamps the Y rotation so you can only look straight up or down, not backwards
-        verticalTransform.localRotation = Quaternion.Euler(new Vector3(clampedRotWithRecoil, 0));
-        verticalTransform.localPosition = Vector3.Lerp(verticalTransform.localPosition, Vector3.down * (VerticalDip - EyeHeight), Time.deltaTime * VertDipSmoothing);
+        lookTransform.localRotation = Quaternion.Euler(new Vector3(clampedRotWithRecoil, 0));
+
+        float crouchOffset = Crouched ? CrouchOffset : 0f;
+        vertMoveTransform.localPosition = Vector3.Lerp(vertMoveTransform.localPosition, Vector3.down * (VerticalDip - EyeHeight + crouchOffset), Time.deltaTime * VertDipSmoothing);
 
         //VerticalDip = Mathf.MoveTowards(VerticalDip, 0, Time.deltaTime * VertDipSpeed);
         VerticalDip = Mathf.Lerp(VerticalDip, 0, Time.deltaTime * VertDipSpeed);
@@ -87,7 +94,7 @@ public class FPSCamera : MonoBehaviour
         Vector3 eulers = Quaternion.LookRotation(transform.position.DirectionTo(point), Vector3.up).eulerAngles;
         playerBody.eulerAngles = new Vector3(0, eulers.y, 0);
         yRotation = Mathf.Clamp(eulers.x, -maxVerticalRotation, maxVerticalRotation);
-        verticalTransform.localRotation = Quaternion.Euler(new Vector3(yRotation, 0));
+        lookTransform.localRotation = Quaternion.Euler(new Vector3(yRotation, 0));
     }
 
     public static void LookAt(Vector3 point)
@@ -95,7 +102,7 @@ public class FPSCamera : MonoBehaviour
         Vector3 eulers = Quaternion.LookRotation(instance.transform.position.DirectionTo(point), Vector3.up).eulerAngles;
         instance.playerBody.eulerAngles = new Vector3(0, eulers.y, 0);
         instance.yRotation = Mathf.Clamp(eulers.x, -instance.maxVerticalRotation, instance.maxVerticalRotation);
-        instance.verticalTransform.localRotation = Quaternion.Euler(new Vector3(instance.yRotation, 0));
+        instance.lookTransform.localRotation = Quaternion.Euler(new Vector3(instance.yRotation, 0));
     }
 
     public static void Shake(ShakePreset preset)
