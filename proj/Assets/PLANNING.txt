@@ -4,3 +4,43 @@ Unified blend file that contains all arms, weapons bones etc
 Then specific blend files for each weapon (to not deal with parenting crap)
 
 Weapons can customize barrel, sights, and barrel attach (flashlight, laser etc)
+
+
+Weapon system:
+
+Attachments
+{
+	Barrels : Shoot sound, bullet velocity, recoil
+	{
+		Default
+		Suppressed
+		Compensator
+	}
+
+	Sights : Aim pos, fov change
+	{
+		Iron Sights
+		Holo
+		Acog
+	}
+
+	Underbarrels : Nothing
+	{
+		Nothing,
+		Flashlight,
+		Laser
+	}
+}
+
+Anims
+{
+	Equip
+	Draw
+	Holster
+	Inspect
+	Ammo Check
+	Fire
+	Fire Aimed
+	Reload
+	Reload Empty
+}

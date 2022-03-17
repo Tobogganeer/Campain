@@ -15,17 +15,11 @@ public class PlayerMovement : MonoBehaviour
 
     private CharacterController controller;
 
-    public float speed = 3;
-    public float crouchMult = 0.45f;
-    public float jumpHeight = 5.3f;
-    public float slopeLimit = 40;
-    public float rampLimit = 15;
-    public float slideFriction = 0.3f;
-    public float gravity = 14f;
-    public float acceleration = 7f;
-    public float airAcceleration = 1.5f;
-    public float slopeAccelPercent = 0.4f;
+    public MovementProfile movementProfile;
+
+    public LayerMask groundLayerMask;
     public LayerMask crouchBlockLayermask;
+    public bool forceCrouch;
 
     private Vector3 groundNormal;
     private bool grounded;
@@ -66,7 +60,6 @@ public class PlayerMovement : MonoBehaviour
     const float StandingHeight = 2f;
     const float CrouchingHeight = 1f;
     const float CrouchHeightDif = StandingHeight - CrouchingHeight;
-    const float ChangeSpeed = 4f;
 
     //Grounded
     const float GroundedSphereRadius = 0.475f;
@@ -74,14 +67,16 @@ public class PlayerMovement : MonoBehaviour
     const float GroundNearDist = 1.8f;
     const float NearSurfaceDist = 0.8f;
     const float NearSurfaceRadius = 0.55f;
+    const float GroundedRayDist = 1.2f; // backup for sphere
 
 
     // Other
-    const float BonusSlideVelocityFadeMult = 2f;
+    const float BonusSlideVelocityFadeMult = 2.35f;
     const float BonusSlideVelocityMult = 2.5f;
-    const float SqrSpeedToKeepSliding = 15f;
-    const float SlideSpeedDecreaseMult = 1.65f;
+    const float SqrSpeedToKeepSliding = 10f;
+    const float SlideSpeedDecreaseMult = 2.65f;
     const float SlideMoveDirInfluence = 0.6f;
+    const float CrouchHopSpeedDecrease = 1.25f;
 
     #endregion
 
@@ -96,6 +91,23 @@ public class PlayerMovement : MonoBehaviour
     public static event Action<float> OnLand;
 
     private bool crouched;
+
+    private bool slidingFromSpeed;
+
+    // Properties
+
+    private bool CanRun => Input.GetKey(Inputs.Sprint) && !crouched && Inputs.VerticalNoSmooth > 0.2f && !WeaponManager.InADS;
+
+    public static bool Crouched => instance.crouched;
+    public static bool Grounded => instance.grounded;
+    public static bool Moving { get; private set; }
+    public static bool Running { get; private set; }
+    public static bool Sliding { get; private set; }
+
+    public static Vector3 LocalVelocity { get; private set; }
+    public static Vector3 WorldVelocity { get; private set; }
+
+    public static float NormalizedSpeed { get; private set; }
 
     private void Start()
     {
@@ -125,7 +137,12 @@ public class PlayerMovement : MonoBehaviour
 
         Move();
 
+        UpdateFOV();
+
         UpdateGrounded();
+
+        //if (Input.GetKeyDown(KeyCode.Mouse0))
+        //    Time.timeScale = Time.timeScale < 0.3f ? 1f : 0.25f;
 
         //if (Input.GetKeyDown(KeyCode.Mouse0))
         //    FPSCamera.VerticalDip += 1f;
@@ -135,19 +152,59 @@ public class PlayerMovement : MonoBehaviour
 
         actualVelocity = (transform.position - lastPos) / Time.deltaTime;
         lastPos = transform.position;
+
+        SetProperties();
+    }
+
+    private void SetProperties()
+    {
+        WorldVelocity = actualVelocity;
+        LocalVelocity = transform.InverseTransformVector(WorldVelocity);
+        Moving = desiredVelocity.sqrMagnitude > 0.1f && WorldVelocity.Flattened().sqrMagnitude > 0.1f;
+        Running = CanRun && Moving && LocalVelocity.z > 0.02f;
+        Sliding = Grounded && /*Crouched &&*/ (bonusSlideVelocity.sqrMagnitude > 0.5f || timeOnSlope > 0.3f || timeOnRamp > 0.3f || slidingFromSpeed);
+        NormalizedSpeed = Mathf.InverseLerp(movementProfile.walkingSpeed, movementProfile.runningSpeed, cur_speed);
     }
 
     private void IncrementValues(float dt)
     {
         timeSinceLastJump += dt;
         jumpReduction -= dt;
-        bonusSlideVelocity = Vector3.MoveTowards(bonusSlideVelocity, Vector3.zero, dt * BonusSlideVelocityFadeMult);
+
+        float fadeMult = 1f;
+
+        float angle = Vector3.Angle(Vector3.up, groundNormal);
+        if (angle > movementProfile.rampLimit)
+        {
+            const float UP_HILL_SLIDE_FADE = 5f;
+            const float STEEPNESS_FADE_FACTOR = 3f;
+
+            float hillAmount = Mathf.InverseLerp(movementProfile.rampLimit, controller.slopeLimit, angle);
+            hillAmount += 1f; // rebound from 0-1 to 1-2
+            hillAmount *= STEEPNESS_FADE_FACTOR; // rebound to 1-2 * STEEPNESS_FADE_FACTOR
+
+            Vector3 slopeHorDir = groundNormal.Flattened().normalized;
+            Vector3 velDir = actualVelocity.Flattened().normalized;
+            float velSimilarity = Vector3.Dot(slopeHorDir, velDir);
+            fadeMult = Mathf.Clamp(-velSimilarity * UP_HILL_SLIDE_FADE, 0, UP_HILL_SLIDE_FADE) * hillAmount * actualVelocity.Flattened().magnitude * 0.5f;
+            //Debug.Log("Slope Fade: " + fadeMult);
+        }
+
+        //bonusSlideVelocity = Vector3.MoveTowards(bonusSlideVelocity, Vector3.zero, dt * BonusSlideVelocityFadeMult * fadeMult);
+
+        const float LerpMul = 2f;
+        bonusSlideVelocity = Vector3.Lerp(bonusSlideVelocity, Vector3.zero, dt * BonusSlideVelocityFadeMult * fadeMult * LerpMul);
+
+        // Switched after discovering airtime was reset before multiplication
     }
 
     private void Move()
     {
+        const float GlobalSlideReduction = 0.75f;
+
         const float JustJumpedThreshold = 0.4f;
         const float SlopeSpeedIncrease = 5;
+        const float MaxSlopeTime = SlopeSpeedIncrease * 4.5f;
 
         Vector2 input = new Vector2(Inputs.HorizontalNoSmooth, Inputs.VerticalNoSmooth);
         input.Normalize();
@@ -155,7 +212,7 @@ public class PlayerMovement : MonoBehaviour
         desiredVelocity = transform.right * input.x + transform.forward * input.y;
         desiredVelocity *= cur_speed;
 
-        y -= gravity * Time.deltaTime;
+        y -= movementProfile.gravity * Time.deltaTime;
 
         if (grounded && timeSinceLastJump > JustJumpedThreshold) y = -DOWNFORCE;
 
@@ -169,28 +226,32 @@ public class PlayerMovement : MonoBehaviour
                 FPSCamera.VerticalDip += Mathf.Lerp(0.0f, 2f, airtime * 0.6f) * dipMult;
                 jumpReduction = Mathf.Max(jumpReduction, Mathf.Clamp(airtime * airtime * 3, 1.25f, JumpMaxFalloff * 1.5f));
                 // Reduce jump upon landing
-                airtime = 0;
+                //airtime = 0;
 
                 if (crouched)
                 {
-                    if (actualVelocity.Flattened().sqrMagnitude > 3f)
+                    const float MinAirtimeForSlideBonus = 0.65f; // Flat ground jump takes about 0.7 sec
+
+                    bool onSteepSlope = Vector3.Angle(Vector3.up, groundNormal) > movementProfile.slopeLimit;
+
+                    if (actualVelocity.Flattened().sqrMagnitude > 3f && airtime > MinAirtimeForSlideBonus && !onSteepSlope)
                     {
-                        float airtimeMult = Mathf.Clamp(airtime, 0.5f, 2.5f);
+                        float airtimeMult = Mathf.Clamp(airtime * 0.4f, 0.75f, 1.45f);
                         //bonusSlideVelocity += actualVelocity.Flattened().normalized * BonusSlideVelocityMult * airtimeMult;
-                        const float MultOfOGVelocity = 0.7f;
+                        const float MultOfOGVelocity = 0.9f; // Was 0.7 before switch to lerp
 
-                        // TODO: Multiply bonus vel by decimal if going up a slope
-
-                        bonusSlideVelocity += actualVelocity.Flattened() * (MultOfOGVelocity * BonusSlideVelocityMult * airtimeMult);
+                        bonusSlideVelocity += actualVelocity.Flattened() * (MultOfOGVelocity * BonusSlideVelocityMult * airtimeMult * GlobalSlideReduction);
                         // Thanks unity analyzer for optimization tip - do scalar maths before vector
                     }
                     // Add bonus vel
 
                     timeOnRamp = 0.5f;
-                    if (groundAngle > slopeLimit)
+                    if (groundAngle > movementProfile.slopeLimit)
                         timeOnSlope = 0.5f;
                     // Can immediately slide down ramps
                 }
+
+                airtime = 0;
             }
         }
         else airtime += Time.deltaTime;
@@ -236,18 +297,52 @@ public class PlayerMovement : MonoBehaviour
             // On slope and hasnt like just jumped
 
             //moveDir = Vector3.zero;
+            Vector3 slopeHorDir = groundNormal.Flattened().normalized;
+
             if (groundNear)
             {
                 //float crouch = 2.5f;
                 float crouch = crouched ? 2.5f : 1f;
-                slopeTime += Time.deltaTime * SlopeSpeedIncrease * crouch;
+                
+                Vector3 velDir = actualVelocity.Flattened().normalized;
+                float velSimilarity = Vector3.Dot(slopeHorDir, velDir);
+
+                if (velSimilarity > -0.1f)
+                    slopeTime += Time.deltaTime * SlopeSpeedIncrease * crouch;
+                else
+                    slopeTime -= Time.deltaTime * SlopeSpeedIncrease * crouch;
+
+                if (slopeTime > MaxSlopeTime)
+                    slopeTime = MaxSlopeTime;
+
+                if (slopeTime < 1f)
+                    slopeTime = 1f;
+
                 y = -DOWNFORCE * slopeTime;
             }
             else
                 slopeTime = 1f;
 
-            desiredVelocity.x += groundNormal.x * slopeTime * (1f - slideFriction);
-            desiredVelocity.z += groundNormal.z * slopeTime * (1f - slideFriction);
+            desiredVelocity.x += groundNormal.x * slopeTime * (1f - movementProfile.slideFriction);
+            desiredVelocity.z += groundNormal.z * slopeTime * (1f - movementProfile.slideFriction);
+
+            float angle = Vector3.Angle(Vector3.up, groundNormal);
+            if (angle > movementProfile.rampLimit)
+            {
+                const float ViewInfluence = 1.25f;
+                const float MaxViewInfluence = 2.5f;
+                const float Mult = 0.2f;
+
+                Vector3 viewDir = FPSCamera.ViewDir.Flattened().normalized;
+                Vector3 slopeSide = Vector3.Cross(slopeHorDir, Vector3.up);
+                float viewSimilarity = Vector3.Dot(slopeSide, viewDir);
+
+                float mul = ViewInfluence * Mathf.Abs(viewSimilarity) * slopeTime * Mult;
+                mul = Mathf.Clamp(mul, 0, MaxViewInfluence);
+
+                desiredVelocity.x += viewDir.x * mul;
+                desiredVelocity.z += viewDir.z * mul;
+            }
         }
         else
         {
@@ -264,10 +359,12 @@ public class PlayerMovement : MonoBehaviour
 
         if (grounded && Input.GetKeyDown(Inputs.Jump) && timeSinceLastJump > JustJumpedThreshold && timeOnSlope < 0.2f && jumpCharge <= 0)
         {
-            jumpCharge = JumpChargeTime;
+            //float timeMult = crouched ? 2f : 1f;
+            jumpCharge = JumpChargeTime;// * timeMult;
             float dip = JumpCamDip;
             dip = Mathf.Clamp(dip - jumpReduction * 0.3f, 0.1f, JumpCamDip);
             float dipMult = crouched ? 0.5f : 1f;
+            //float dipMult = crouched ? 2.5f : 1f; // now crouch jumping makes you stand up
             FPSCamera.VerticalDip += dip * dipMult;
         }
 
@@ -291,23 +388,57 @@ public class PlayerMovement : MonoBehaviour
         //moveVelocity = Vector3.Lerp(flatVel, desiredVelocity, Time.deltaTime * cur_accel).WithY(y);
         moveVelocity = Vector3.Lerp(flatVel, desiredVelocity, Time.deltaTime * cur_accel).WithY(0);
 
+        slidingFromSpeed = false;
+
         // New velocity is slower than current vel
         if (moveVelocity.sqrMagnitude < flatVel.sqrMagnitude)
         {
             if (crouched && grounded && flatVel.sqrMagnitude > SqrSpeedToKeepSliding)
             {
                 // Sliding on ground
-                Vector3 moveDir = Vector3.Lerp(flatVel.normalized, moveVelocity.normalized, Time.deltaTime * SlideMoveDirInfluence);
-                moveVelocity = moveDir * (flatVel.magnitude - Time.deltaTime * SlideSpeedDecreaseMult);
+                slidingFromSpeed = true;
+
+                const float GroundNormalDirectionInfluence = 0.4f;
+                Vector3 normalMove = groundNormal.Flattened() * GroundNormalDirectionInfluence;
+                Vector3 moveDir = Vector3.Lerp(flatVel.normalized, (moveVelocity.normalized + normalMove).normalized, Time.deltaTime * SlideMoveDirInfluence);
+
+                // Decrease speed if moving up slope
+
+                float fadeMult = 1f;
+                const float HILL_FADE_EFFECT = 0.03f;
+
+                float angle = Vector3.Angle(Vector3.up, groundNormal);
+                if (angle > movementProfile.rampLimit)
+                {
+                    const float UP_HILL_SLIDE_FADE = 5f;
+                    const float STEEPNESS_FADE_FACTOR = 3f;
+
+                    float hillAmount = Mathf.InverseLerp(movementProfile.rampLimit, controller.slopeLimit, angle);
+                    hillAmount += 1f; // rebound from 0-1 to 1-2
+                    hillAmount *= STEEPNESS_FADE_FACTOR; // rebound to 1-2 * STEEPNESS_FADE_FACTOR
+
+                    Vector3 slopeHorDir = groundNormal.Flattened().normalized;
+                    Vector3 velDir = actualVelocity.Flattened().normalized;
+                    float velSimilarity = Vector3.Dot(slopeHorDir, velDir);
+                    fadeMult = Mathf.Clamp(-velSimilarity * UP_HILL_SLIDE_FADE, 0, UP_HILL_SLIDE_FADE) * hillAmount * actualVelocity.Flattened().magnitude * HILL_FADE_EFFECT;
+                    //Debug.Log("Slope Fade: " + fadeMult);
+                }
+
+                const float InverseGlobalReduction = 1f / GlobalSlideReduction;
+                moveVelocity = moveDir * (flatVel.magnitude - Time.deltaTime * SlideSpeedDecreaseMult * fadeMult * InverseGlobalReduction);
             }
             else if (crouched && !grounded)
-                moveVelocity = moveVelocity.normalized * flatVel.magnitude;
+                moveVelocity = moveVelocity.normalized * (flatVel.magnitude - Time.deltaTime * CrouchHopSpeedDecrease);
         }
         // Keep velocity when sliding fast enough
 
         moveVelocity.y = y;
 
         controller.Move(moveVelocity * Time.deltaTime);
+
+
+        // PHANTOM GHOST CROUCH FLOATING:
+        // ground normal not being reset when crouching in air
     }
 
     private void SlopeMovement()
@@ -323,7 +454,7 @@ public class PlayerMovement : MonoBehaviour
         const float MaxControl = 0.7f;
         float crouchFactor = crouched ? 1.75f : 1f;
 
-        float control = Mathf.Clamp(Mathf.Abs(similarity) * slopeAccelPercent * slopeTime * crouchFactor, 0.1f, MaxControl * crouchFactor);
+        float control = Mathf.Clamp(Mathf.Abs(similarity) * movementProfile.slopeAccelPercent * slopeTime * crouchFactor, 0.1f, MaxControl * crouchFactor);
         desiredVelocity *= control;
     }
 
@@ -340,15 +471,17 @@ public class PlayerMovement : MonoBehaviour
         const float MaxControl = 0.9f;
         float crouchFactor = crouched ? 1.75f : 1f;
 
-        float control = Mathf.Clamp(Mathf.Abs(similarity) * slopeAccelPercent * slopeTime * crouchFactor, 0.1f, MaxControl * crouchFactor);
+        float control = Mathf.Clamp(Mathf.Abs(similarity) * movementProfile.slopeAccelPercent * slopeTime * crouchFactor, 0.1f, MaxControl * crouchFactor);
         desiredVelocity *= control;
     }
 
     private void Jump()
     {
-        if (grounded && timeSinceLastJump > 0.4f && timeOnSlope < 0.2f)
+        if (grounded && timeSinceLastJump > 0.4f && timeOnSlope < 0.2f && !crouched)
         {
             // Jump!
+            AudioManager.Play(AudioArray.Jump, transform.position.WithY(transform.position.y - 0.4f));
+
             jumpReduction = Mathf.Max(1, jumpReduction);
             float calibratedHeight = cur_jumpHeight / Mathf.Min(jumpReduction, JumpFalloffMul);
             float red = (jumpReduction + JumpFalloff) * JumpFalloffMul;
@@ -363,27 +496,50 @@ public class PlayerMovement : MonoBehaviour
         jumpCharge = 0;
     }
 
+    private void UpdateFOV()
+    {
+        float value = Moving && Running ? NormalizedSpeed : 0f;
+        float runMultiplier = value * 0.2f; // Will go between 0 and 0.2
+
+        float aimMult = WeaponManager.InADS ? WeaponManager.CurrentWeapon.GetADSFov() : 1f;
+
+        CameraFOV.Set(aimMult + runMultiplier);
+    }
+
+
 
     private void UpdateSpeed()
     {
-        // Lerping?
-        cur_speed = speed;
-        if (crouched) cur_speed *= crouchMult;
+        float target = movementProfile.walkingSpeed;
 
-        if (Input.GetKey(Inputs.Sprint)) cur_speed *= 1.45f;
+        if (crouched) target = movementProfile.crouchSpeed;
+        else if (CanRun) target = movementProfile.runningSpeed;
+        //else if (CanRun) target = no weapon equipped ? movementProfile.unarmedRunSpeed : movementProfile.runningSpeed;
+
+        if (!grounded) target *= crouched ? movementProfile.crouchAirSpeedMultiplier : movementProfile.airSpeedMultiplier;
+
+        WeaponData data = Weapons.Get(WeaponManager.CurrentWeaponType);
+        if (WeaponManager.InADS) target *= data.adsMoveSpeedMult;
+        target *= data.speedMult;
+
+        cur_speed = Mathf.Lerp(cur_speed, target, Time.deltaTime * movementProfile.speedLerpSpeed);
     }
 
     private void UpdateAcceleration()
     {
-        // change crouched to sliding
-        //cur_accel = grounded ? crouched ? slideAcceleration : acceleration : airAcceleration;
-        cur_accel = grounded ? acceleration : airAcceleration;
+        float target = grounded ? movementProfile.groundAcceleration : movementProfile.airAcceleration;
+
+        cur_accel = Mathf.Lerp(cur_accel, target, Time.deltaTime * movementProfile.accelLerpSpeed);
     }
 
     private void UpdateJumpHeight()
     {
-        cur_jumpHeight = jumpHeight;
-        if (crouched) cur_jumpHeight *= crouchMult;
+        float target = CanRun ? movementProfile.runningJumpHeight : movementProfile.walkingJumpHeight;
+
+        WeaponData data = Weapons.Get(WeaponManager.CurrentWeaponType);
+        target *= data.jumpMult;
+
+        cur_jumpHeight = Mathf.Lerp(cur_jumpHeight, target, Time.deltaTime * movementProfile.jumpLerpSpeed);
     }
 
     private void UpdateCrouched()
@@ -395,12 +551,19 @@ public class PlayerMovement : MonoBehaviour
             crouched = true;
 
         else
-            crouched = Input.GetKey(Inputs.Crouch);
+            crouched = Input.GetKey(Inputs.Crouch) && jumpCharge <= 0;
+
+        crouched |= forceCrouch;
+
+        const float CrouchJumpReduction = 2.25f;
+
+        if (crouched)
+            jumpReduction = Mathf.Max(jumpReduction, CrouchJumpReduction);
 
         float desiredControllerHeight = crouched ? CrouchingHeight : StandingHeight;
 
         //controller.height = Mathf.Lerp(controller.height, desiredControllerHeight, Time.deltaTime * crouchChangeSpeed);
-        controller.height = Mathf.MoveTowards(controller.height, desiredControllerHeight, Time.deltaTime * ChangeSpeed);
+        controller.height = Mathf.MoveTowards(controller.height, desiredControllerHeight, Time.deltaTime * movementProfile.crouchChangeSpeed);
         float offset = Mathf.Lerp(CrouchHeightDif * 0.5f, 0, Mathf.InverseLerp(CrouchingHeight, StandingHeight, controller.height));
         controller.center = new Vector3(0, -offset, 0);
 
@@ -411,23 +574,28 @@ public class PlayerMovement : MonoBehaviour
     {
         groundAngle = Vector3.Angle(Vector3.up, groundNormal);
 
-        if (groundAngle > slopeLimit)
+        if (groundAngle > movementProfile.slopeLimit)
             timeOnSlope += Time.deltaTime;
         else
             timeOnSlope = 0;
 
-        if (groundAngle > rampLimit && crouched)
+        if (groundAngle > movementProfile.rampLimit && crouched)
             timeOnRamp += Time.deltaTime;
         else
             timeOnRamp = 0f;
         //grounded = !onSlope;
 
         wasGrounded = grounded;
-        grounded = Physics.SphereCast(new Ray(transform.position, Vector3.down), GroundedSphereRadius, GroundedSphereDist);
+        RaycastHit hit;
+        grounded = Physics.SphereCast(new Ray(transform.position, Vector3.down), GroundedSphereRadius, out hit, GroundedSphereDist, groundLayerMask)
+            || Physics.Raycast(transform.position, Vector3.down, out hit, GroundedRayDist, groundLayerMask);
 
-        groundNear = Physics.Raycast(new Ray(transform.position, Vector3.down), GroundNearDist);
+        if (grounded)
+            groundNormal = hit.normal;
 
-        if (!Physics.CheckSphere(transform.position + Vector3.down * NearSurfaceDist, NearSurfaceRadius))
+        groundNear = Physics.Raycast(new Ray(transform.position, Vector3.down), GroundNearDist, groundLayerMask);
+
+        if (!Physics.CheckSphere(transform.position + Vector3.down * NearSurfaceDist, NearSurfaceRadius, groundLayerMask))
             groundNormal = Vector3.up;
     }
 
@@ -435,6 +603,9 @@ public class PlayerMovement : MonoBehaviour
     {
         Gizmos.color = Color.red;
         Gizmos.DrawSphere(transform.position + Vector3.down * GroundedSphereDist, GroundedSphereRadius);
+
+        Gizmos.color = Color.magenta;
+        Gizmos.DrawLine(transform.position, transform.position + Vector3.down * GroundedRayDist);
         // Grounded
 
         if (controller == null)

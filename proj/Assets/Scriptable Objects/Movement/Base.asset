@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd3cfe77340a78546a53b24e5e7210e0, type: 3}
+  m_Name: Base
+  m_EditorClassIdentifier: 
+  walkingSpeed: 2.5
+  runningSpeed: 3.5
+  unarmedRunSpeed: 5
+  airSpeedMultiplier: 1.2
+  crouchSpeed: 1.25
+  crouchChangeSpeed: 3
+  crouchAirSpeedMultiplier: 1.2
+  slopeLimit: 40
+  rampLimit: 15
+  slideFriction: 0.3
+  slopeAccelPercent: 0.4
+  gravity: 14
+  walkingJumpHeight: 5.1
+  runningJumpHeight: 5.6
+  groundAcceleration: 5.5
+  airAcceleration: 1
+  speedLerpSpeed: 5
+  jumpLerpSpeed: 5
+  accelLerpSpeed: 5

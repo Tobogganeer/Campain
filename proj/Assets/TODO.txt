@@ -8,3 +8,6 @@ Dont jump when roof above
 Reset y vel if touch roof
 
 Reduce speed momentarily on hard landing
+max out slide speed/time value
+
+Force uncrouch on jump
