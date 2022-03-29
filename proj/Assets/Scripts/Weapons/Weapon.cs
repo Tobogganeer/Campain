@@ -45,12 +45,20 @@ public class Weapon : MonoBehaviour
         float yRange = rawRecoil.y * 0.65f;
         finalRecoil.y = Random.Range(rawRecoil.y - yRange, rawRecoil.y + yRange);
 
+        if (PlayerMovement.Crouched) finalRecoil *= Data.crouchRecoilMult;
+        if (WeaponManager.InADS) finalRecoil *= Data.attachments.Get(sight).recoilMult;
+
         return finalRecoil;
     }
 
     public AudioArray GetShootSound()
     {
         return Data.attachments.Get(barrel).shootSound;
+    }
+
+    public float GetShootVolume()
+    {
+        return Data.attachments.Get(barrel).shootVolume;
     }
 
     public void ShakeCamera()
@@ -66,6 +74,12 @@ public class Weapon : MonoBehaviour
     public float recoil = 8;
     float timer;
 
+    public FireAnimation fireAnimation;
+
+    public GameObject suppresor;
+    public GameObject defaultBarrel;
+    public GameObject compensator;
+
     private void Update()
     {
         // TEMP TESTING
@@ -78,7 +92,34 @@ public class Weapon : MonoBehaviour
             timer = 60f / fireRateRPM;
             ShakeCamera();
             FPSCamera.AddRecoil(GetRecoil());
+            fireAnimation.Apply(fireAnimation.settings);
+            AudioManager.Play(GetShootSound(), barrelTip.position, barrelTip, 35, AudioCategory.SFX, GetShootVolume());
+            AudioManager.Play(AudioArray.NP5_Fire_Mech, barrelTip.position, barrelTip, 35);
             //Debug.Log("New timer: " + timer);
+        }
+
+        if (Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            defaultBarrel.SetActive(false);
+            compensator.SetActive(false);
+            suppresor.SetActive(true);
+            barrel = BarrelType.Suppressed;
+        }
+
+        if (Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            defaultBarrel.SetActive(true);
+            compensator.SetActive(false);
+            suppresor.SetActive(false);
+            barrel = BarrelType.Default;
+        }
+
+        if (Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            defaultBarrel.SetActive(false);
+            compensator.SetActive(true);
+            suppresor.SetActive(false);
+            barrel = BarrelType.Compensator;
         }
     }
 }

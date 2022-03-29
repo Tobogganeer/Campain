@@ -80,18 +80,24 @@ MonoBehaviour:
     barrels:
     - name: Default
       shootSound: 150
+      shootVolume: 1
       bulletVelocity: 400
       recoil: {x: 12, y: 18}
+      innaccuracyMult: 1
       type: 0
     - name: Suppressed
-      shootSound: 150
+      shootSound: 151
+      shootVolume: 0.45
       bulletVelocity: 285
       recoil: {x: 16, y: 14}
+      innaccuracyMult: 0.9
       type: 1
     - name: Compensator
-      shootSound: 150
+      shootSound: 152
+      shootVolume: 0.4
       bulletVelocity: 225
       recoil: {x: 5, y: 7}
+      innaccuracyMult: 1.2
       type: 2
     underbarrels:
     - name: Nothing

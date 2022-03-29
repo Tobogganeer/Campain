@@ -56,8 +56,10 @@ public class Barrel
     public string name;
 
     public AudioArray shootSound;
+    public float shootVolume = 1f;
     public float bulletVelocity;
     public Vector2 recoil;
+    public float innaccuracyMult;
 
     public BarrelType type;
 }

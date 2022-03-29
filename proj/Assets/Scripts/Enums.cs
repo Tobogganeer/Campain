@@ -21,7 +21,10 @@ public enum AudioArray : byte
     Jump,
     UIHover,
     UIClick,
-    NP5_Shoot = 150,
+    NP5_Fire_Default = 150,
+    NP5_Fire_Suppressor,
+    NP5_Fire_Compensator,
+    NP5_Fire_Mech
 }
 
 public enum PooledObject
