@@ -7,12 +7,21 @@ public interface IDamagable
     public void TakeDamage(DamageDetails details);
 }
 
-public struct DamageDetails
+public class DamageDetails
 {
     public float amount;
+    public DamageSource source;
+
     public Vector3 origin;
     public Vector3 direction;
     public WeaponType weaponType;
+
+    public DamageDetails(float amount, DamageSource source)
+    {
+        this.amount = amount;
+        this.source = source;
+        this.weaponType = WeaponType.NP5;
+    }
 
     public DamageDetails(float amount, Vector3 origin, Vector3 direction, WeaponType weaponType)
     {
@@ -26,4 +35,13 @@ public struct DamageDetails
     {
         return new DamageDetails(amount, Vector3.zero, Vector3.zero, weaponType);
     }
+}
+
+public enum DamageSource
+{
+    None,
+    World,
+    Bullet,
+    Shrapnel,
+    Explosion
 }

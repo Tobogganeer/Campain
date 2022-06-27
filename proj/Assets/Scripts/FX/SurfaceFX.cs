@@ -41,11 +41,11 @@ public class SurfaceFX : MonoBehaviour
 
     //public GameObject audioSourcePrefab;
 
-    private static Dictionary<SurfaceType, AudioArray> hitClips = new Dictionary<SurfaceType, AudioArray>();
+    private static Dictionary<SurfaceType, string> hitClips = new Dictionary<SurfaceType, string>();
     public SurfaceEffectAudioClips[] i_hitClips;
 
-    private static Dictionary<SurfaceFootstepType, AudioArray> leftFootstepClips = new Dictionary<SurfaceFootstepType, AudioArray>();
-    private static Dictionary<SurfaceFootstepType, AudioArray> rightFootstepClips = new Dictionary<SurfaceFootstepType, AudioArray>();
+    private static Dictionary<SurfaceFootstepType, string> leftFootstepClips = new Dictionary<SurfaceFootstepType, string>();
+    private static Dictionary<SurfaceFootstepType, string> rightFootstepClips = new Dictionary<SurfaceFootstepType, string>();
     public SurfaceFootstepAudioClips[] i_footstepClips;
 
     public SurfaceEffect[] i_surfaceEffects;
@@ -53,7 +53,7 @@ public class SurfaceFX : MonoBehaviour
 
     public bool suppressWarnings;
 
-    public static void PlayHitSound(SurfaceType surfaceType, Vector3 position, Transform parent = null, float maxDistance = 10, float volume = 1, float minPitch = 0.85f, float maxPitch = 1.10f)
+    public static void PlayHitSound(SurfaceType surfaceType, Audio audio)
     {
         if (!hitClips.ContainsKey(surfaceType))
         {
@@ -63,7 +63,7 @@ public class SurfaceFX : MonoBehaviour
             return;
         }
 
-        AudioManager.Play(hitClips[surfaceType], position, parent, maxDistance, AudioCategory.SFX, volume, minPitch, maxPitch);
+        AudioManager.Play(audio.SetClip(hitClips[surfaceType]));
     }
 
     public static void PlayFootstepSound(SurfaceFootstepType footstepType, Vector3 position, Foot foot)
@@ -78,7 +78,7 @@ public class SurfaceFX : MonoBehaviour
                 return;
             }
 
-            AudioManager.Play(leftFootstepClips[footstepType], position);
+            AudioManager.Play(new Audio(leftFootstepClips[footstepType]).SetPosition(position));
         }
         else if (foot == Foot.Right)
         {
@@ -90,7 +90,7 @@ public class SurfaceFX : MonoBehaviour
                 return;
             }
 
-            AudioManager.Play(rightFootstepClips[footstepType], position);
+            AudioManager.Play(new Audio(rightFootstepClips[footstepType]).SetPosition(position));
         }
 
         
@@ -125,7 +125,7 @@ public struct SurfaceEffectAudioClips
 {
     public string name;
     public SurfaceType array;
-    public AudioArray clips;
+    public string clips;
 }
 
 [System.Serializable]
@@ -133,6 +133,6 @@ public struct SurfaceFootstepAudioClips
 {
     public string name;
     public SurfaceFootstepType array;
-    public AudioArray leftFootClips;
-    public AudioArray rightFootClips;
+    public string leftFootClips;
+    public string rightFootClips;
 }

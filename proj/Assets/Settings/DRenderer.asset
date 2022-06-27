@@ -56,7 +56,9 @@ MonoBehaviour:
   m_RendererFeatures:
   - {fileID: -7293350479107142074}
   - {fileID: 2586947188090326572}
-  m_RendererFeatureMap: 46ce648e61d0c89a2cced1e6c2aee623
+  - {fileID: 5750033176698815045}
+  - {fileID: 2522642684619613280}
+  m_RendererFeatureMap: 46ce648e61d0c89a2cced1e6c2aee6234502d88fb538cc4f6064fdf7273a0223
   m_UseNativeRenderPass: 0
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}
@@ -93,6 +95,32 @@ MonoBehaviour:
   m_ClusteredRendering: 0
   m_TileSize: 32
   m_IntermediateTextureMode: 0
+--- !u!114 &2522642684619613280
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2e66a50a9671c84b834c20506e2c9d2, type: 3}
+  m_Name: Volumetric Light
+  m_EditorClassIdentifier: 
+  m_Active: 0
+  settings:
+    downsampling: 1
+    stage: 2
+    intensity: 1.11
+    scattering: 0.77
+    steps: 24
+    maxDistance: 75
+    jitter: 250
+    gaussBlur:
+      amount: 0.36
+      samples: 0.12
+    material: {fileID: 0}
+    renderPassEvent: 550
 --- !u!114 &2586947188090326572
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -116,3 +144,20 @@ MonoBehaviour:
     DirectLightingStrength: 0.25
     Radius: 0.035
     SampleCount: 6
+--- !u!114 &5750033176698815045
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8324f4da12d492d44bc4fbd88c8d5a5a, type: 3}
+  m_Name: GodRays
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  settings:
+    resolutionScale: 0.5
+    intensity: 0.35
+    blurWidth: 1

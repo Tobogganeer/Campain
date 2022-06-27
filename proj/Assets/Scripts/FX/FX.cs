@@ -77,6 +77,13 @@ public class FX : MonoBehaviour
     {
         SpawnVisualEffect(type, position, Quaternion.identity, parent);
     }
+
+    [SerializeField] private GameObject hitParticles_debug;
+
+    public static void SpawnBulletHit_Debug(Vector3 point, Vector3 normal, Transform parent)
+    {
+        Instantiate(instance.hitParticles_debug, point + normal * 0.01f, Quaternion.LookRotation(normal), parent);
+    }
 }
 
 [System.Serializable]

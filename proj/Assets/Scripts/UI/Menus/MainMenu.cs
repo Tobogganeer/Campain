@@ -40,7 +40,7 @@ public class MainMenu : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
 
         ReturnToMainMenu();
-        AudioManager.SetLowPass(1f);
+        AudioMaster.SetLowPass(1f);
     }
 
     public void OnSettingsButtonPressed()

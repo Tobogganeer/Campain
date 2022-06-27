@@ -53,11 +53,11 @@ public class PlayerAnimation : MonoBehaviour
     public void Set()
     {
         // Called only for local client
-        float x = GetFactor(player.movement.LocalActualVelocity.x);
-        float y = GetFactor(player.movement.LocalActualVelocity.z);
+        float x = GetFactor(PlayerMovement.LocalVelocity.x);
+        float y = GetFactor(PlayerMovement.LocalVelocity.z);
 
-        animator.SetBool("grounded", player.movement.grounded);
-        animator.SetBool("crouching", player.movement.crouching);
+        animator.SetBool("grounded", PlayerMovement.Grounded);
+        animator.SetBool("crouching", PlayerMovement.Crouched);
         animator.SetFloat("x", x, 0.1f, Time.deltaTime);
         animator.SetFloat("y", y, 0.1f, Time.deltaTime);
     }
@@ -68,20 +68,20 @@ public class PlayerAnimation : MonoBehaviour
         xy = Mathf.Abs(xy);
 
         float factor;
-        float walkSpeed = player.movement.GetWalkingSpeed();
+        float walkSpeed = PlayerMovement.instance.movementProfile.walkingSpeed;
 
         if (xy < walkSpeed) factor = Mathf.Lerp(0, 0.5f, xy / walkSpeed);
-        else factor = Mathf.Lerp(0.5f, 1f, xy / player.movement.GetRunningSpeed());
+        else factor = Mathf.Lerp(0.5f, 1f, xy / PlayerMovement.instance.movementProfile.runningSpeed);
 
         return factor * sign;
     }
 
     private PlayerAnimationMessage GetMessage()
     {
-        float x = GetFactor(player.movement.LocalActualVelocity.x);
-        float y = GetFactor(player.movement.LocalActualVelocity.z);
+        float x = GetFactor(PlayerMovement.LocalVelocity.x);
+        float y = GetFactor(PlayerMovement.LocalVelocity.z);
 
-        return new PlayerAnimationMessage(player.movement.crouching, player.movement.grounded, x, y, player.cam.transform.forward);
+        return new PlayerAnimationMessage(PlayerMovement.Crouched, PlayerMovement.Grounded, x, y, player.cam.transform.forward);
     }
 
 

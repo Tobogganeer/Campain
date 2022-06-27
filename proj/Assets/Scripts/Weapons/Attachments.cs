@@ -55,11 +55,13 @@ public class Barrel
     [SerializeField, HideInInspector]
     public string name;
 
-    public AudioArray shootSound;
+    public string shootSound;
     public float shootVolume = 1f;
+    public float shootMechVolume = 1f;
     public float bulletVelocity;
     public Vector2 recoil;
     public float innaccuracyMult;
+    public float damageMult = 1f;
 
     public BarrelType type;
 }
@@ -82,6 +84,7 @@ public class Sight
     public Vector3 aimPos;
     public float fovMult = 0.8f;
     public float recoilMult = 0.8f;
+    public float sensMult = 0.5f;
 
     public SightType type;
 }

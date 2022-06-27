@@ -10,6 +10,8 @@ public class CameraFOV : MonoBehaviour
     private static float desiredMultiplier = 1;
     public float transitionSpeed = 5;
 
+    public static float FOVFactor { get; private set; }
+
     private void Start()
     {
         fovs = new float[cameras.Length];
@@ -25,6 +27,8 @@ public class CameraFOV : MonoBehaviour
         {
             cameras[i].fieldOfView = Mathf.Lerp(cameras[i].fieldOfView, fovs[i] * desiredMultiplier, Time.deltaTime * transitionSpeed);
         }
+
+        FOVFactor = cameras[0].fieldOfView / fovs[0];
     }
 
     //public static void Set(float newFOV)

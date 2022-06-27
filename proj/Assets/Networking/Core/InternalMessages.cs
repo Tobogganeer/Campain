@@ -188,7 +188,7 @@ namespace VirtualVoid.Net
 
             if (SteamManager.IsServer) return; // Already spawned object
         
-            NetworkObjectIDMessage spawnMessage = message.GetStruct<NetworkObjectIDMessage>();
+            NetworkObjectIDMessage spawnMessage = message.Get<NetworkObjectIDMessage>();
             if (spawnMessage.objType == NetworkObjectType.SCENE_OBJECT)
             {
                 if (spawnMessage.sceneID == 0) return;

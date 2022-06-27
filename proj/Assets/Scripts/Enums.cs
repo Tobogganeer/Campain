@@ -11,6 +11,7 @@ public enum Level : byte
     Game
 }
 
+/*
 public enum AudioArray : byte
 {
     Null,
@@ -21,11 +22,18 @@ public enum AudioArray : byte
     Jump,
     UIHover,
     UIClick,
+    EnemyDie,
+    BulletCrack,
+    BulletWhiz,
     NP5_Fire_Default = 150,
     NP5_Fire_Suppressor,
     NP5_Fire_Compensator,
-    NP5_Fire_Mech
+    NP5_Fire_Mech,
+    NP5_Reload,
+    NP5_Fire_Omph,
+    NP5_Fire_Tech,
 }
+*/
 
 public enum PooledObject
 {
@@ -50,7 +58,8 @@ public enum GameStage : byte
 public enum WeaponType
 {
     None,
-    NP5
+    NP5,
+    P19
 }
 
 public enum VisualEffect

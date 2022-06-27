@@ -1236,7 +1236,7 @@ namespace VirtualVoid.Net
         #endregion
 
         #region Struct
-        public Message Add<T>(T str) where T : struct, INetworkMessage
+        public Message Add<T>(T str) where T : INetworkMessage, new()
         {
             //if (UnwrittenLength < str.GetMaxSize())
             //    throw new Exception($"Message has insufficient remaining capacity ({UnwrittenLength}) to add type '" + typeof(T) + "'!");
@@ -1253,9 +1253,9 @@ namespace VirtualVoid.Net
             return this;
         }
 
-        public T GetStruct<T>() where T : struct, INetworkMessage
+        public T Get<T>() where T : INetworkMessage, new()
         {
-            T str = default;
+            T str = new T();
             str.Deserialize(this);
             return str;
         }

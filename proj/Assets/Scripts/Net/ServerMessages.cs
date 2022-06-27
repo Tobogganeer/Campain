@@ -7,7 +7,7 @@ using Steamworks.Data;
 
 public static class ServerSend
 {
-    public static void SendAudio(AudioMessage audio, SteamId from)
+    public static void SendAudio(Audio audio, SteamId from)
     {
         Message message = Message.Create(SendType.Reliable, MessageIDs.Shared.AudioManager_Play);
         message.Add(audio);
@@ -35,7 +35,7 @@ public static class ServerHandle
 
     private static void OnAudio(SteamId from, Message message)
     {
-        AudioMessage audio = message.GetStruct<AudioMessage>();
+        Audio audio = message.Get<Audio>();
 
         ServerSend.SendAudio(audio, from);
     }

@@ -36,8 +36,8 @@ public class WeaponData : ScriptableObject
     public WeaponSway.CrouchOffsets crouchOffsets;
 
     [Space]
-    public Bullet.BulletBallistics ballistics;
-    public float maxRange;
+    public BulletBallistics ballistics;
+    public float velocityLossPerSecond;
     public float baseDamage;
     public AnimationCurve damageFalloff;
     public AccuracyProfile accuracyProfile;

@@ -20,6 +20,8 @@ AudioMixerController:
     name: ambient_volume
   - guid: 34fd3031e8e75fe46ad34e3699763c06
     name: master_volume
+  - guid: 8e412af30d31eb84db1166b11373570d
+    name: pitch
   - guid: 635f870e99332684190993733c30eee1
     name: cutoff_freq
   - guid: 001c8ee59eaa2694e9fbdaa0f13bb311

@@ -1,0 +1,129 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07db06ed9627548488123e1f5139cbef, type: 3}
+  m_Name: P19
+  m_EditorClassIdentifier: 
+  type: 2
+  fullAuto: 0
+  speedMult: 1
+  jumpMult: 1
+  adsMoveSpeedMult: 0.65
+  adsSpeed: 1
+  bobSpeedMult: 1
+  bobAmountMult: 1
+  camShakePreset: {fileID: 11400000, guid: 56387e7000c24684e83d9c724a1ac6c4, type: 2}
+  aimedCamShakePreset: {fileID: 11400000, guid: b1b0a64955e4c6e45a3a66e2043f9b50, type: 2}
+  weaponShakePreset: {fileID: 11400000, guid: a0349491e3d4cb64daad28975dec2f49, type: 2}
+  aimedWeaponShakePreset: {fileID: 11400000, guid: 33e89ad5a5e6a6548938b93ad15c04e6, type: 2}
+  fireRateRPM: 650
+  crouchRecoilMult: 0.7
+  crouchOffsets:
+    pos: {x: -0.15, y: -0.1, z: -0.15}
+    rot: {x: 0, y: 0, z: 25}
+    rot_aim: {x: 0, y: 0, z: 10}
+  ballistics: {fileID: 11400000, guid: d9b9eb166781a9340848f98b5999335c, type: 2}
+  velocityLossPerSecond: 30
+  baseDamage: 31
+  damageFalloff:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.06492248
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: -3.2378314
+      outSlope: -3.2378314
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.03197676
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  accuracyProfile:
+    standingInnaccuracy: 0.45
+    walkingInnaccuracy: 0.65
+    runningInnaccuracy: 0.85
+    adsMult: 0.8
+    crouchingMult: 0.7
+    airborneMult: 2
+  rbForce: 7
+  armourPenetration: 0.6
+  hitboxDamageMultipliers:
+    head: 2.5
+    chest: 1
+    abdomen: 1.25
+    arms: 0.65
+    legs: 0.45
+  attachments:
+    barrels:
+    - name: Default
+      shootSound: 150
+      shootVolume: 1
+      shootMechVolume: 1
+      bulletVelocity: 550
+      recoil: {x: 9, y: 21}
+      innaccuracyMult: 1
+      damageMult: 1
+      type: 0
+    - name: Suppressed
+      shootSound: 151
+      shootVolume: 0.45
+      shootMechVolume: 0.65
+      bulletVelocity: 425
+      recoil: {x: 12, y: 14}
+      innaccuracyMult: 0.9
+      damageMult: 0.9
+      type: 1
+    - name: Compensator
+      shootSound: 152
+      shootVolume: 0.4
+      shootMechVolume: 0.8
+      bulletVelocity: 275
+      recoil: {x: 6, y: 6}
+      innaccuracyMult: 1.2
+      damageMult: 0.7
+      type: 2
+    underbarrels:
+    - name: Nothing
+      type: 0
+    - name: Flashlight
+      type: 1
+    - name: Laser
+      type: 2
+    sights:
+    - name: IronSights
+      aimPos: {x: -0.1146, y: 0.0365, z: -0.05}
+      fovMult: 0.65
+      recoilMult: 0.8
+      sensMult: 0.5
+      type: 0
+    - name: Holo
+      aimPos: {x: -0.123, y: 0, z: -0.08}
+      fovMult: 0.55
+      recoilMult: 0.7
+      sensMult: 0.35
+      type: 1
+    - name: Acog
+      aimPos: {x: -0.123, y: 0, z: -0.05}
+      fovMult: 0.35
+      recoilMult: 0.5
+      sensMult: 0.15
+      type: 2

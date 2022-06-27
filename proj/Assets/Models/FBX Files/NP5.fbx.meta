@@ -9,6 +9,9 @@ ModelImporter:
   - first:
       74: 8164423784272736973
     second: NP5 Armature|VM:TPose
+  - first:
+      74: -8351168738811867486
+    second: NP5 Armature|VM:NP5_Reload
   externalObjects:
   - first:
       type: UnityEngine:Material

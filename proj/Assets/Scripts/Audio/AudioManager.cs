@@ -1,17 +1,19 @@
+#define MULTIPLAYER
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Audio;
 using VirtualVoid.Net;
 
+[RequireComponent(typeof(AudioMaster))]
 public class AudioManager : MonoBehaviour
 {
-    public static AudioManager instance;
+    public static AudioManager Instance { get; private set; }
     private void Awake()
     {
-        if (instance == null) instance = this;
+        if (Instance == null) Instance = this;
 
-        else if (instance != this)
+        else if (Instance != this)
         {
             Destroy(gameObject);
             return;
@@ -20,255 +22,350 @@ public class AudioManager : MonoBehaviour
         transform.SetParent(null);
         DontDestroyOnLoad(gameObject);
 
+        Init();
+    }
+
+    private void Init()
+    {
         clips.Clear();
-        foreach (AudioClips aclips in audioClips)
+        clipNameToIndex.Clear();
+
+        int count = 0;
+
+        for (int i = 0; i < singleClips.Length; i++)
         {
-            clips.Add(aclips.array, aclips.clips);
+            clips.Add(singleClips[i]);
+            if (clipNameToIndex.ContainsKey(clips[count].name))
+                Debug.LogError("Duplicate single audio key: " + clips[count].name);
+            clipNameToIndex.Add(clips[count].name, count++);
         }
 
-        //nullClip = AudioClip.Create("Null", 5, 1, 4096, false);
+        for (int i = 0; i < clipGroups.Length; i++)
+        {
+            int[] indices = new int[clipGroups[i].clips.Length];
+
+            for (int j = 0; j < clipGroups[i].clips.Length; j++)
+            {
+                clips.Add(clipGroups[i].clips[j]);
+                if (clipNameToIndex.ContainsKey(clips[count].name))
+                    Debug.LogError("Duplicate group audio clip key: " + clips[count].name);
+                clipNameToIndex.Add(clips[count].name, count);
+                indices[j] = count++;
+            }
+
+            if (groupNameToIndices.ContainsKey(clipGroups[i].name))
+                Debug.LogError("Duplicate group audio group key: " + clipGroups[i].name);
+            groupNameToIndices.Add(clipGroups[i].name, indices);
+        }
     }
 
-    //public GameObject audioSourcePrefab;
+    public AudioClip[] singleClips;
+    public AudioClipGroup[] clipGroups;
 
-    private static Dictionary<AudioArray, AudioClip[]> clips = new Dictionary<AudioArray, AudioClip[]>();
-    public AudioClips[] audioClips;
-    //private static AudioClip nullClip;
+    private static readonly List<AudioClip> clips = new List<AudioClip>();
+    private static readonly Dictionary<string, int> clipNameToIndex = new Dictionary<string, int>();
+    private static readonly Dictionary<string, int[]> groupNameToIndices = new Dictionary<string, int[]>();
 
-    public AudioMixer masterMixer;
-    public AudioMixerGroup masterGroup;
-    public AudioMixerGroup sfxGroup;
-    public AudioMixerGroup ambientGroup;
-
-    //public AudioMixerSnapshot defaultSnapshot;
-    //public AudioMixerSnapshot pausedSnapshot;
-    //public AudioMixerSnapshot outsideSnapshot;
-
-    public const float DEFAULT_MIN_PITCH = 0.85f;
-    public const float DEFAULT_MAX_PITCH = 1.10f;
-
-    public bool updateInspectorGroupNames = false;
-
-
-
-    public static void Play(AudioArray sound, Vector3 position, Transform parent = null, float maxDistance = 10, AudioCategory category = AudioCategory.SFX, float volume = 1, float minPitch = DEFAULT_MIN_PITCH, float maxPitch = DEFAULT_MAX_PITCH, float _3dAmount = 1f)
+    public static int GetClipIndex(string clipOrGroup)
     {
-        if (!clips.ContainsKey(sound) || clips[sound].Length == 0)
-        {
-            Debug.LogWarning("Could not find clip for " + sound);
-            return;
-        }
-
-        byte clip = (byte)Random.Range(0, clips[sound].Length);
-        AudioMessage message = GetAudioMessage(sound, clip, position, parent, maxDistance, category, volume, minPitch, maxPitch, _3dAmount);
-
-        if (DSMSteamManager.IsServer)
-        {
-            ServerSend.SendAudio(message, DSMSteamManager.SteamID);
-        }
+        if (groupNameToIndices.TryGetValue(clipOrGroup, out int[] indices))
+            return indices[Random.Range(0, indices.Length)];
+        else if (clipNameToIndex.TryGetValue(clipOrGroup, out int clip))
+            return clip;
         else
         {
-            if (DSMSteamManager.ConnectedToServer)
-                ClientSend.SendAudio(message);
+            Debug.LogWarning("Could not get clip for " + clipOrGroup);
+            return -1;
         }
-
-        PlaySpecificAudioArrayLocal(sound, clip, position, parent, maxDistance, category, volume, minPitch, maxPitch, _3dAmount);
-    }
-
-    public static void Play2D(AudioArray sound, AudioCategory category = AudioCategory.SFX, float volume = 1, float minPitch = DEFAULT_MIN_PITCH, float maxPitch = DEFAULT_MAX_PITCH)
-    {
-        Play(sound, Vector3.zero, null, 10, category, volume, minPitch, maxPitch, 0f);
-    }
-
-    public static void Play2DLocal(AudioArray sound, AudioCategory category = AudioCategory.SFX, float volume = 1, float minPitch = DEFAULT_MIN_PITCH, float maxPitch = DEFAULT_MAX_PITCH)
-    {
-        PlayLocal(sound, Vector3.zero, null, 10, category, volume, minPitch, maxPitch, 0f);
     }
 
 
-    public static void PlaySpecificAudioArrayLocal(AudioArray sound, byte clipIndex, Vector3 position, Transform parent = null, float maxDistance = 10, AudioCategory category = AudioCategory.SFX, float volume = 1, float minPitch = DEFAULT_MIN_PITCH, float maxPitch = DEFAULT_MAX_PITCH, float _3dAmount = 1f)
+    public static void Play(Audio audio)
     {
-        PlayAudioClipLocal(clips[sound][clipIndex], position, parent, maxDistance, category, volume, minPitch, maxPitch, _3dAmount);
+        // Send over network
+#if MULTIPLAYER
+        //AudioMessage message = new AudioMessage(audio);
+
+        if (SteamManager.IsServer)
+            ServerSend.SendAudio(audio, SteamManager.SteamID);
+        else if (SteamManager.ConnectedToServer)
+            ClientSend.SendAudio(audio);
+#endif
+
+        // Play on our side
+        PlayLocal(audio);
     }
 
-    public static void PlayLocal(AudioArray sound, Vector3 position, Transform parent = null, float maxDistance = 10, AudioCategory category = AudioCategory.SFX, float volume = 1, float minPitch = DEFAULT_MIN_PITCH, float maxPitch = DEFAULT_MAX_PITCH, float _3dAmount = 1f)
+    public static void PlayLocal(Audio audio)
     {
-        if (!clips.ContainsKey(sound) || clips[sound].Length == 0)
+        if (audio.ClipIndex < 0 || audio.ClipIndex >= clips.Count || clips[audio.ClipIndex] == null)
         {
-            Debug.LogWarning("Could not find clip for " + sound);
+            Debug.LogWarning($"Clip (index: {audio.ClipIndex}) was invalid or null.");
             return;
         }
 
-        byte clip = (byte)Random.Range(0, clips[sound].Length);
-
-        PlaySpecificAudioArrayLocal(sound, clip, position, parent, maxDistance, category, volume, minPitch, maxPitch, _3dAmount);
-    }
-
-    public static void PlayAudioClipLocal(AudioClip clip, Vector3 position, Transform parent = null, float maxDistance = 10, AudioCategory category = AudioCategory.SFX, float volume = 1, float minPitch = DEFAULT_MIN_PITCH, float maxPitch = DEFAULT_MAX_PITCH, float _3dAmount = 1f)
-    {
-        //AudioSource source = Instantiate(instance.audioSourcePrefab, position, Quaternion.identity, parent).GetComponent<AudioSource>();
         GameObject sourceObj = ObjectPoolManager.GetObject(PooledObject.AudioSource);
-        if (sourceObj != null)
+        if (sourceObj == null)
         {
-            if (parent != null && !parent.gameObject.activeInHierarchy)
-            {
-                sourceObj.SetActive(false);
-                return;
-            }
-            sourceObj.transform.SetParent(parent);
-            sourceObj.transform.position = position;
-
-            AudioSource source = sourceObj.GetComponent<AudioSource>();
-
-            source.clip = clip;
-            source.maxDistance = maxDistance;
-            float pitch = Random.Range(minPitch, maxPitch);
-            source.pitch = pitch;
-            source.volume = volume;
-            source.spatialBlend = _3dAmount;
-            source.outputAudioMixerGroup = instance.GetGroup(category);
-            source.Play();
-
-            // MASSIVE OOPS: Realized I should have been dividing by pitch instead of multiplying (for like every game!) - Nov 25/21
-            sourceObj.GetComponent<PooledAudioSource>().DisableAfterTime(source.clip.length / pitch + 0.3f);
-            //Destroy(source.gameObject, source.clip.length / (pitch + 0.1f));
-        }
-        else
-        {
-            Debug.Log($"Couldn't play audio as received null audio source from pool");
-        }
-    }
-
-    public static void OnNetworkAudio(AudioMessage message)
-    {
-        Transform parent = message.parent != null ? message.parent.transform.parent : null;
-        float _3dAmount = message.flags.HasFlag(AudioMessage.AudioMessageFlags.Global) ? 0f : 1f;
-
-        PlaySpecificAudioArrayLocal(message.sound, message.audioIndex, message.position, parent, message.maxDistance, message.category, message.volume, message.minPitch, message.maxPitch, _3dAmount);
-    }
-
-    private static AudioMessage GetAudioMessage(AudioArray sound, byte clipIndex, Vector3 position, Transform parent = null, float maxDistance = 10, AudioCategory category = AudioCategory.SFX, float volume = 1, float minPitch = DEFAULT_MIN_PITCH, float maxPitch = DEFAULT_MAX_PITCH, float _3dAmount = 1f)
-    {
-        AudioMessage audioMessage = new AudioMessage(sound, clipIndex, position, null, maxDistance, category, volume, minPitch, maxPitch);
-
-        bool is3d = _3dAmount > 0.5f;
-
-        if (!is3d) audioMessage.IsGlobal();
-
-        else
-        {
-
-            if (parent != null && parent.TryGetComponent(out NetworkID networkID))
-            {
-                audioMessage.parent = networkID;
-                audioMessage.UseParent();
-            }
-
-            if (maxDistance != 10f)
-                audioMessage.UseDistance();
+            // Create pool
+            Debug.Log("Creating audio source pool");
+            ObjectPoolManager.CreatePool(PooledObject.AudioSource, AudioMaster.Instance.audioSourcePrefab, 35);
+            sourceObj = ObjectPoolManager.GetObject(PooledObject.AudioSource);
         }
 
-        if (volume != 1f)
-            audioMessage.UseVolume();
-
-        if (minPitch != DEFAULT_MIN_PITCH || maxPitch != DEFAULT_MAX_PITCH)
-            audioMessage.UsePitch();
-
-        return audioMessage;
-    }
-
-
-
-    private const string MASTER_VOLUME_PARAM = "master_volume";
-    private const string AMBIENT_VOLUME_PARAM = "ambient_volume";
-    private const string SFX_VOLUME_PARAM = "sfx_volume";
-
-
-    private const float MIN_AUDIO_DB = -70;
-    private const float MAX_AUDIO_DB = 5;
-
-    private const float MIN_LOG_OUT = -60;
-    private const float MAX_LOG_OUT = 0;
-
-    public static void SetMasterVolume(float volume0_1) => SetVolume(MASTER_VOLUME_PARAM, volume0_1);
-
-    public static void SetAmbientVolume(float volume0_1) => SetVolume(AMBIENT_VOLUME_PARAM, volume0_1);
-
-    public static void SetSFXVolume(float volume0_1) => SetVolume(SFX_VOLUME_PARAM, volume0_1);
-
-
-
-    private static void SetVolume(string paramName, float volume0_1)
-    {
-        //Debug.Log($"Set {paramName} to {GetVolume(volume0_1)} (from {volume0_1})");
-        instance.masterMixer.SetFloat(paramName, GetVolume(volume0_1));
-    }
-
-
-    private static float GetVolume(float volume0_1)
-    {
-        //float remappedVolume = Remap.Float(volume0_1, 0, 1, MIN_AUDIO_DB, MAX_AUDIO_DB);
-
-        float clamped = Mathf.Clamp(volume0_1, 0.001f, 1f);
-
-        float remapped = 20f * Mathf.Log10(clamped);
-        remapped = Remap.Float(remapped, MIN_LOG_OUT, MAX_LOG_OUT, MIN_AUDIO_DB, MAX_AUDIO_DB);
-
-        //Debug.Log($"IN: {clamped} - OUT: {remapped}");
-
-        return remapped;
-    }
-
-    private void OnValidate()
-    {
-        if (audioClips == null || !updateInspectorGroupNames) return;
-
-        for (int i = 0; i < audioClips.Length; i++)
+        if (audio.Parent != null && !audio.Parent.gameObject.activeInHierarchy)
         {
-            audioClips[i].name = audioClips[i].array.ToString();
-        }
-    }
-
-    private AudioMixerGroup GetGroup(AudioCategory category)
-    {
-        switch (category)
-        {
-            case AudioCategory.Master:
-                return masterGroup;
-            case AudioCategory.SFX:
-                return sfxGroup;
-            case AudioCategory.Ambient:
-                return ambientGroup;
+            // Parent is turned off
+            Debug.Log("Skipping audio played on disabled parent");
+            sourceObj.SetActive(false);
+            return;
         }
 
-        return null;
+        sourceObj.transform.SetParent(audio.Parent);
+        sourceObj.transform.position = audio.Position;
+
+        AudioSource source = sourceObj.GetComponent<AudioSource>();
+
+        source.clip = clips[audio.ClipIndex];
+        source.maxDistance = audio.MaxDistance;
+        source.pitch = audio.Pitch;
+        source.volume = audio.Volume;
+        source.spatialBlend = audio.Flags.HasFlag(Audio.AudioFlags.Global) ? 0f : 1f; // 0 for 2d, 1 for 3d
+        source.outputAudioMixerGroup = AudioMaster.GetGroup(audio.Category);
+        source.Play();
+
+        sourceObj.GetComponent<PooledAudioSource>().DisableAfterTime(source.clip.length / audio.Pitch + 0.25f); // 0.25 seconds extra for good measure
+    }
+
+    public static void OnNetworkAudio(Audio audio)
+    {
+        PlayLocal(audio);
     }
 
 
-    private const string CUTOFF_FREQ_PARAM = "cutoff_freq";
-
-    static float oldPercent;
-    public static void SetLowPass(float percent0_1)
+    public class Defaults
     {
-        if (oldPercent == percent0_1) return;
+        public const float Pitch = 1f;
+        public const float MinPitch = 0.85f;
+        public const float MaxPitch = 1.10f;
+        public const float MaxDistance = 25f;
+        public const float Volume = 1f;
+        public const float _3dAmount = 1f;
+        public const AudioCategory Category = AudioCategory.SFX;
+    }
 
-        else oldPercent = percent0_1;
-
-        float remapped = Remap.Float(percent0_1, 0, 1, 10, 22000);
-
-        instance.masterMixer.SetFloat(CUTOFF_FREQ_PARAM, remapped);
+    [System.Serializable]
+    public class AudioClipGroup
+    {
+        public string name;
+        public AudioClip[] clips;
     }
 }
 
-
-
-[System.Serializable]
-public struct AudioClips
+public class Audio
+#if MULTIPLAYER
+    : INetworkMessage
+#endif
 {
-    [SerializeField, HideInInspector]
-    public string name;
-    public AudioArray array;
-    public AudioClip[] clips;
+    public int ClipIndex { get; private set; }
+    public Vector3 Position { get; private set; }
+    public Transform Parent { get; private set; }
+    public float MaxDistance { get; private set; }
+    public AudioCategory Category { get; private set; }
+    public float Volume { get; private set; }
+    public float Pitch { get; private set; }
+    public float MinPitch { get; private set; }
+    public float MaxPitch { get; private set; }
+
+    public AudioFlags Flags { get; private set; }
+
+    #region Constructors
+
+    public Audio()
+    {
+        SetDefault();
+    }
+
+    public Audio(string clipOrGroup)
+    {
+        SetDefault();
+        SetClip(clipOrGroup);
+    }
+
+    public Audio(int clipIndex)
+    {
+        SetDefault();
+        SetClip(clipIndex);
+    }
+
+    #endregion
+
+    #region Args
+
+    public Audio SetDefault()
+    {
+        ClipIndex = -1;
+        Position = Vector3.zero;
+        Parent = null;
+        MaxDistance = AudioManager.Defaults.MaxDistance;
+        Category = AudioManager.Defaults.Category;
+        Volume = AudioManager.Defaults.Volume;
+        MinPitch = AudioManager.Defaults.MinPitch;
+        MaxPitch = AudioManager.Defaults.MaxPitch;
+        Pitch = Random.Range(MinPitch, MaxPitch);
+
+        Flags = AudioFlags.None;
+
+        return this;
+    }
+
+    public Audio SetClip(string clipOrGroup)
+    {
+        ClipIndex = AudioManager.GetClipIndex(clipOrGroup);
+        return this;
+    }
+
+    public Audio SetClip(int clipIndex)
+    {
+        ClipIndex = clipIndex;
+        return this;
+    }
+
+    public Audio SetClip(AudioClip clip)
+    {
+        SetClip(clip.name);
+        return this;
+    }
+
+    public Audio SetPosition(Vector3 position)
+    {
+        Position = position;
+        return this;
+    }
+
+    public Audio SetParent(Transform parent)
+    {
+        Parent = parent;
+        if (parent != null)
+            Flags |= AudioFlags.Parent;
+        return this;
+    }
+
+    public Audio SetDistance(float maxDistance)
+    {
+        MaxDistance = maxDistance;
+        if (maxDistance != AudioManager.Defaults.MaxDistance)
+            Flags |= AudioFlags.Distance;
+        return this;
+    }
+
+    public Audio SetVolume(float volume)
+    {
+        Volume = volume;
+        if (volume != AudioManager.Defaults.Volume)
+            Flags |= AudioFlags.Volume;
+        return this;
+    }
+
+    public Audio SetPitch(float min, float max)
+    {
+        MinPitch = min;
+        MaxPitch = max;
+        Pitch = Random.Range(min, max);
+        return this;
+    }
+
+    public Audio SetPitch(float pitch)
+    {
+        Pitch = pitch;
+        return this;
+    }
+
+    public Audio SetCategory(AudioCategory category)
+    {
+        Category = category;
+        if (category != AudioManager.Defaults.Category)
+            Flags |= AudioFlags.Category;
+        return this;
+    }
+
+    public Audio SetGlobal()
+    {
+        Flags |= AudioFlags.Global;
+        return this;
+    }
+
+    public Audio Set2D()
+    {
+        return SetGlobal();
+    }
+
+    #endregion
+
+    #region Net
+#if MULTIPLAYER
+    public void AddToMessage(Message message)
+    {
+        message.Add((byte)Flags);
+        message.Add(ClipIndex);
+        message.Add(Pitch);
+
+        if (!Flags.HasFlag(AudioFlags.Global))
+        {
+            message.Add(Position);
+
+            NetworkID netObj = Parent != null ? Parent.GetComponent<NetworkID>() : null;
+            if (Flags.HasFlag(AudioFlags.Parent) && netObj != null)
+                message.Add(netObj);
+
+            if (Flags.HasFlag(AudioFlags.Distance))
+                message.Add(MaxDistance);
+        }
+
+        if (Flags.HasFlag(AudioFlags.Volume))
+            message.Add(Volume);
+
+        if (Flags.HasFlag(AudioFlags.Category))
+            message.Add((byte)Category);
+    }
+
+    public void Deserialize(Message message)
+    {
+        Flags = (AudioFlags)message.GetByte();
+        SetClip(message.GetInt());
+        SetPitch(message.GetFloat());
+
+        if (!Flags.HasFlag(AudioFlags.Global))
+        {
+            SetPosition(message.GetVector3());
+
+            if (Flags.HasFlag(AudioFlags.Parent))
+                SetParent(message.GetNetworkID()?.transform);
+
+            if (Flags.HasFlag(AudioFlags.Distance))
+                SetDistance(message.GetFloat());
+        }
+
+        if (Flags.HasFlag(AudioFlags.Volume))
+            SetVolume(message.GetFloat());
+
+        if (Flags.HasFlag(AudioFlags.Category))
+            SetCategory((AudioCategory)message.GetByte());
+    }
+#endif
+#endregion
+
+    [System.Flags]
+    public enum AudioFlags : byte
+    {
+        None = 0,
+        Global = 1 << 0,
+        Parent = 1 << 1,
+        Distance = 1 << 2,
+        Volume = 1 << 3,
+        //Pitch = 1 << 4,
+        Category = 1 << 5,
+    }
 }
 
 public enum AudioCategory : byte
@@ -277,4 +374,3 @@ public enum AudioCategory : byte
     SFX,
     Ambient
 }
-

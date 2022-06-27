@@ -103,11 +103,13 @@ public class PlayerMovement : MonoBehaviour
     public static bool Moving { get; private set; }
     public static bool Running { get; private set; }
     public static bool Sliding { get; private set; }
+    public static Vector3 Position => instance.transform.position;
 
     public static Vector3 LocalVelocity { get; private set; }
     public static Vector3 WorldVelocity { get; private set; }
 
     public static float NormalizedSpeed { get; private set; }
+    public static float AirTime { get; private set; }
 
     private void Start()
     {
@@ -164,6 +166,7 @@ public class PlayerMovement : MonoBehaviour
         Running = CanRun && Moving && LocalVelocity.z > 0.02f;
         Sliding = Grounded && /*Crouched &&*/ (bonusSlideVelocity.sqrMagnitude > 0.5f || timeOnSlope > 0.3f || timeOnRamp > 0.3f || slidingFromSpeed);
         NormalizedSpeed = Mathf.InverseLerp(movementProfile.walkingSpeed, movementProfile.runningSpeed, cur_speed);
+        AirTime = airtime;
     }
 
     private void IncrementValues(float dt)
@@ -480,7 +483,8 @@ public class PlayerMovement : MonoBehaviour
         if (grounded && timeSinceLastJump > 0.4f && timeOnSlope < 0.2f && !crouched)
         {
             // Jump!
-            AudioManager.Play(AudioArray.Jump, transform.position.WithY(transform.position.y - 0.4f));
+            AudioManager.Play(new Audio("Jump").SetPosition(transform.position.WithY(transform.position.y - 0.4f)));
+            //AudioManager.Play(AudioArray.Jump, transform.position.WithY(transform.position.y - 0.4f));
 
             jumpReduction = Mathf.Max(1, jumpReduction);
             float calibratedHeight = cur_jumpHeight / Mathf.Min(jumpReduction, JumpFalloffMul);

@@ -7,7 +7,7 @@ using UnityEngine;
 public abstract class PoolObject : MonoBehaviour
 {
     /// <summary>
-    /// Called when the object has been spawned from the object pool. Called before the object is set active.
+    /// Called when the object has been spawned from the object pool. Called after the object is set active.
     /// </summary>
     public abstract void OnObjectSpawn();
 

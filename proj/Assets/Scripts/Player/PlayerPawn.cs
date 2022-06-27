@@ -7,7 +7,6 @@ public class PlayerPawn : MonoBehaviour
 {
     [Header("Both")]
     public Player player;
-    public PlayerMovementDSM movement;
     public FPSCamera cam;
     public VoiceOutput voiceOutput;
     public PlayerAnimation animator;
@@ -15,14 +14,7 @@ public class PlayerPawn : MonoBehaviour
 
     public bool IsLocalPlayer => player.IsLocalPlayer;
 
-    public bool Crouching
-    {
-        get
-        {
-            if (movement != null) return movement.crouching;
-            else return animator.crouching;
-        }
-    }
+    public bool Crouching => IsLocalPlayer ? PlayerMovement.Crouched : animator.crouching;
 
     private void Start()
     {

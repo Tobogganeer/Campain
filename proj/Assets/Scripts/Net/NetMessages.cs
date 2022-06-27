@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using VirtualVoid.Net;
 
+#region Old Audio Message
+/*
 public struct AudioMessage : INetworkMessage
 {
     public AudioArray sound;
@@ -17,7 +19,7 @@ public struct AudioMessage : INetworkMessage
 
     public AudioMessageFlags flags;
 
-    public AudioMessage(AudioArray sound, byte audioIndex, Vector3 position, NetworkID parent = null, float maxDistance = 10, AudioCategory category = AudioCategory.SFX, float volume = 1, float minPitch = AudioManager.DEFAULT_MIN_PITCH, float maxPitch = AudioManager.DEFAULT_MAX_PITCH)
+    public AudioMessage(AudioArray sound, byte audioIndex, Vector3 position, NetworkID parent = null, float maxDistance = 10, AudioCategory category = AudioCategory.SFX, float volume = 1, float minPitch = AudioManager.Defaults.MinPitch, float maxPitch = AudioManager.Defaults.MaxPitch)
     {
         this.sound = sound;
         this.audioIndex = audioIndex;
@@ -151,6 +153,72 @@ public struct AudioMessage : INetworkMessage
         Category    = 1 << 5,
     }
 }
+*/
+#endregion
+
+#region New Old Audio Message (can add classes to messages now)
+/*
+public struct AudioMessage : INetworkMessage
+{
+    private Audio audio;
+
+    public AudioMessage(Audio audio)
+    {
+        this.audio = audio;
+    }
+
+    public void AddToMessage(Message message)
+    {
+        message.Add((byte)audio.Flags);
+        message.Add(audio.ClipIndex);
+        message.Add(audio.Pitch);
+
+        if (!audio.Flags.HasFlag(Audio.AudioFlags.Global))
+        {
+            message.Add(audio.Position);
+
+            NetworkID netObj = audio.Parent != null ? audio.Parent.GetComponent<NetworkID>() : null;
+            if (audio.Flags.HasFlag(Audio.AudioFlags.Parent) && netObj != null)
+                message.Add(netObj);
+
+            if (audio.Flags.HasFlag(Audio.AudioFlags.Distance))
+                message.Add(audio.MaxDistance);
+        }
+
+        if (audio.Flags.HasFlag(Audio.AudioFlags.Volume))
+            message.Add(audio.Volume);
+
+        if (audio.Flags.HasFlag(Audio.AudioFlags.Category))
+            message.Add((byte)audio.Category);
+    }
+
+    public void Deserialize(Message message)
+    {
+        audio = new Audio();
+        Audio.AudioFlags flags = (Audio.AudioFlags)message.GetByte();
+        audio.SetClip(message.GetInt());
+        audio.SetPitch(message.GetFloat());
+
+        if (!flags.HasFlag(Audio.AudioFlags.Global))
+        {
+            audio.SetPosition(message.GetVector3());
+
+            if (flags.HasFlag(Audio.AudioFlags.Parent))
+                audio.SetParent(message.GetNetworkID().transform);
+
+            if (flags.HasFlag(Audio.AudioFlags.Distance))
+                audio.SetDistance(message.GetFloat());
+        }
+
+        if (flags.HasFlag(Audio.AudioFlags.Volume))
+            audio.SetVolume(message.GetFloat());
+
+        if (flags.HasFlag(Audio.AudioFlags.Category))
+            audio.SetCategory((AudioCategory)message.GetByte());
+    }
+}
+*/
+#endregion
 
 public struct PlayerAnimationMessage : INetworkMessage
 {

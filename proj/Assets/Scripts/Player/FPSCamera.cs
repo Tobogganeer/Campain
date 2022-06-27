@@ -24,6 +24,7 @@ public class FPSCamera : MonoBehaviour
 
     private float yRotation;
     private float currentLean;
+    private float currentLeanMove;
 
     public static float CurrentLean => instance.currentLean;
 
@@ -49,6 +50,7 @@ public class FPSCamera : MonoBehaviour
 
     [Space]
     public float leanAngle = 25f;
+    public float leanOffset = 0.3f;
     public float leanBlockedMult = 0.5f;
     public float leanCrouchMult = 0.7f;
     public float leanRaycastLength = 0.75f;
@@ -60,14 +62,21 @@ public class FPSCamera : MonoBehaviour
 
     public Shaker weaponHolderShaker;
 
-    public static bool Crouched;
-
-    public static Vector3 ViewDir => instance.transform.forward;
-
     public ShakePreset debugShake;
     public ShakePreset debugWeaponShake;
     public ShakePreset debugAimedShake;
     public ShakePreset debugAimedWeaponShake;
+
+    [Space]
+    public float sprintHorShake = 0.18f;
+    public float sprintVertShake = 0.2f;
+    public float sprintRunMul = 4;
+    public Transform sprintTransform;
+
+
+    public static bool Crouched;
+
+    public static Vector3 ViewDir => instance.transform.forward;
 
     private void Start()
     {
@@ -84,6 +93,7 @@ public class FPSCamera : MonoBehaviour
 
         VerticalMovement();
         Lean();
+        SprintShake();
     }
 
     private void MouseLook()
@@ -97,10 +107,12 @@ public class FPSCamera : MonoBehaviour
         float x = Input.GetAxisRaw("Mouse X");
         float y = Input.GetAxisRaw("Mouse Y");
 
-        playerBody.Rotate(Vector3.up * x * sensitivity);
+        float adsSens = WeaponManager.InADS ? WeaponManager.CurrentWeapon.GetSensitivityMult() : 1f;
+
+        playerBody.Rotate(Vector3.up * x * sensitivity * adsSens);
         // Rotates the body horizontally
 
-        yRotation = Mathf.Clamp(yRotation - y * sensitivity, -maxVerticalRotation, maxVerticalRotation);
+        yRotation = Mathf.Clamp(yRotation - y * sensitivity * adsSens, -maxVerticalRotation, maxVerticalRotation);
         //float clampedRotWithRecoil = yRotation;
         float clampedRotWithRecoil = Mathf.Clamp(yRotation, -maxVerticalRotation, maxVerticalRotation);
 
@@ -122,29 +134,51 @@ public class FPSCamera : MonoBehaviour
     private void Lean()
     {
         float lean = 0;
+        float leanMove = 0;
 
         if (Input.GetKey(Inputs.LeanLeft)) lean += 1f;
         if (Input.GetKey(Inputs.LeanRight)) lean -= 1f;
 
         if (Mathf.Abs(lean) > 0.2f)
         {
-            lean *= leanAngle;
-
             if (Crouched) lean *= leanCrouchMult;
+
+            leanMove = lean * leanOffset;
+
+            lean *= leanAngle;
 
             Vector3 rayOrigin = vertMoveTransform.position + (Vector3.up * EyeHeight);
             Vector3 dir = lean > 0f ? -vertMoveTransform.right : vertMoveTransform.right;
 
             if (Physics.Raycast(rayOrigin, dir, leanRaycastLength, leanRayMask))
+            {
                 lean *= leanBlockedMult;
+                leanMove *= leanBlockedMult;
+            }
         }
 
         currentLean = Mathf.Lerp(currentLean, lean, Time.deltaTime * LeanSpeed);
+        currentLeanMove = Mathf.Lerp(currentLeanMove, leanMove, Time.deltaTime * LeanSpeed);
 
         leanTransform.localRotation = Quaternion.Euler(0, 0, currentLean);
+        leanTransform.localPosition = new Vector3(-currentLeanMove, -0.5f, 0);
         //leanWeaponTransform
     }
 
+    private void SprintShake()
+    {
+        if (!PlayerMovement.Grounded) return;
+
+        float sin = WeaponSway.SinValue;
+        float vert = sin * sin * sin;
+        Vector3 desired = new Vector3(Mathf.Abs(vert) * sprintVertShake, -sin * sprintHorShake);
+        //Vector3 desired = Vector3.zero;
+
+        if (PlayerMovement.Running)
+            desired *= sprintRunMul;
+
+        sprintTransform.localRotation = Quaternion.Slerp(sprintTransform.localRotation, Quaternion.Euler(desired), Time.deltaTime * 10);
+    }
 
     public void LookAt_Local(Vector3 point)
     {

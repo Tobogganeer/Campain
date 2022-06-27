@@ -117,15 +117,15 @@ namespace VirtualVoid.Net
                 NetworkAnimatorFlags flags = (NetworkAnimatorFlags)message.PeekByte();
 
                 if (flags.HasFlag(NetworkAnimatorFlags.FLOAT))
-                    ApplyFloatBuffer(message.GetStruct<AnimFloatBuffer>());
+                    ApplyFloatBuffer(message.Get<AnimFloatBuffer>());
                 else if (flags.HasFlag(NetworkAnimatorFlags.BOOL))
-                    ApplyBoolBuffer(message.GetStruct<AnimBoolBuffer>());
+                    ApplyBoolBuffer(message.Get<AnimBoolBuffer>());
                 else if (flags.HasFlag(NetworkAnimatorFlags.INT))
-                    ApplyIntBuffer(message.GetStruct<AnimIntBuffer>());
+                    ApplyIntBuffer(message.Get<AnimIntBuffer>());
                 else if (flags.HasFlag(NetworkAnimatorFlags.TRIGGER))
-                    ApplyTriggerBuffer(message.GetStruct<AnimTriggerBuffer>());
+                    ApplyTriggerBuffer(message.Get<AnimTriggerBuffer>());
                 else if (flags.HasFlag(NetworkAnimatorFlags.PLAY))
-                    ApplyPlayBuffer(message.GetStruct<AnimPlayBuffer>());
+                    ApplyPlayBuffer(message.Get<AnimPlayBuffer>());
             }
         }
 

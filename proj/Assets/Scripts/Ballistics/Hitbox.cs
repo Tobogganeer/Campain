@@ -2,9 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Hitbox : MonoBehaviour//, IBulletDamagable, IExplosionDamagable
+public class Hitbox : MonoBehaviour, IBulletDamagable, IExplosionDamagable
 {
-    /*
     public HitboxRegion region;
     public Transform damageReceiver;
     private IDamagable damagable;
@@ -16,7 +15,7 @@ public class Hitbox : MonoBehaviour//, IBulletDamagable, IExplosionDamagable
 
     public static float GetBulletDamageMultiplier(DamageDetails details, HitboxRegion region)
     {
-        DamageRegions regions = Weapons.GetProfile(details.weaponType).HitboxDamageMultipliers;
+        DamageRegions regions = Weapons.Get(details.weaponType).hitboxDamageMultipliers;
 
         switch (region)
         {
@@ -68,6 +67,9 @@ public class Hitbox : MonoBehaviour//, IBulletDamagable, IExplosionDamagable
     {
         details.amount *= GetBulletDamageMultiplier(details, region);
         damagable.TakeDamage(details);
+        if (region == HitboxRegion.Head)
+            AudioManager.Play(new Audio("EnemyDie").SetVolume(0.3f).SetPitch(0.95f, 1.05f).Set2D());
+            //AudioManager.Play2D(AudioArray.EnemyDie, AudioCategory.SFX, 0.3f, 0.95f, 1.05f);
     }
 
     public void TakeExplosiveDamage(DamageDetails details)
@@ -75,7 +77,6 @@ public class Hitbox : MonoBehaviour//, IBulletDamagable, IExplosionDamagable
         details.amount *= GetExplosiveDamageMultiplier();
         damagable.TakeDamage(details);
     }
-    */
 
     [System.Serializable]
     public class DamageRegions

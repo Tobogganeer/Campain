@@ -16,7 +16,7 @@ MonoBehaviour:
   fullAuto: 1
   speedMult: 1
   jumpMult: 1
-  adsMoveSpeedMult: 0.75
+  adsMoveSpeedMult: 0.65
   adsSpeed: 1
   bobSpeedMult: 1
   bobAmountMult: 1
@@ -24,18 +24,14 @@ MonoBehaviour:
   aimedCamShakePreset: {fileID: 11400000, guid: b1b0a64955e4c6e45a3a66e2043f9b50, type: 2}
   weaponShakePreset: {fileID: 11400000, guid: a0349491e3d4cb64daad28975dec2f49, type: 2}
   aimedWeaponShakePreset: {fileID: 11400000, guid: 33e89ad5a5e6a6548938b93ad15c04e6, type: 2}
-  fireRateRPM: 600
+  fireRateRPM: 650
   crouchRecoilMult: 0.7
   crouchOffsets:
     pos: {x: -0.15, y: -0.1, z: -0.15}
     rot: {x: 0, y: 0, z: 25}
-    rot_aim: {x: 0, y: 0, z: 7}
-  ballistics:
-    MinAngle: 10
-    BounceVelocityLoss: 100
-    VelocityLossPerUnit: 100
-    MaxHardness: 3
-  maxRange: 450
+    rot_aim: {x: 0, y: 0, z: 10}
+  ballistics: {fileID: 11400000, guid: d9b9eb166781a9340848f98b5999335c, type: 2}
+  velocityLossPerSecond: 30
   baseDamage: 31
   damageFalloff:
     serializedVersion: 2
@@ -79,25 +75,31 @@ MonoBehaviour:
   attachments:
     barrels:
     - name: Default
-      shootSound: 150
+      shootSound: NP5_Fire_Default
       shootVolume: 1
-      bulletVelocity: 400
-      recoil: {x: 12, y: 18}
+      shootMechVolume: 1
+      bulletVelocity: 550
+      recoil: {x: 9, y: 21}
       innaccuracyMult: 1
+      damageMult: 1
       type: 0
     - name: Suppressed
-      shootSound: 151
+      shootSound: NP5_Fire_Suppressed
       shootVolume: 0.45
-      bulletVelocity: 285
-      recoil: {x: 16, y: 14}
+      shootMechVolume: 0.65
+      bulletVelocity: 425
+      recoil: {x: 12, y: 14}
       innaccuracyMult: 0.9
+      damageMult: 0.9
       type: 1
     - name: Compensator
-      shootSound: 152
+      shootSound: NP5_Fire_Compensated
       shootVolume: 0.4
-      bulletVelocity: 225
-      recoil: {x: 5, y: 7}
+      shootMechVolume: 0.8
+      bulletVelocity: 275
+      recoil: {x: 6, y: 6}
       innaccuracyMult: 1.2
+      damageMult: 0.7
       type: 2
     underbarrels:
     - name: Nothing
@@ -108,17 +110,20 @@ MonoBehaviour:
       type: 2
     sights:
     - name: IronSights
-      aimPos: {x: -0.123, y: 0.02, z: 0}
-      fovMult: 0.7
-      recoilMult: 0.8
-      type: 0
-    - name: Holo
-      aimPos: {x: -0.123, y: 0, z: 0}
+      aimPos: {x: -0.123, y: 0.02, z: -0.05}
       fovMult: 0.65
       recoilMult: 0.8
+      sensMult: 0.5
+      type: 0
+    - name: Holo
+      aimPos: {x: -0.123, y: 0, z: -0.08}
+      fovMult: 0.55
+      recoilMult: 0.7
+      sensMult: 0.35
       type: 1
     - name: Acog
-      aimPos: {x: -0.123, y: 0, z: 0}
-      fovMult: 0.5
-      recoilMult: 0.8
+      aimPos: {x: -0.123, y: 0, z: -0.05}
+      fovMult: 0.35
+      recoilMult: 0.5
+      sensMult: 0.15
       type: 2

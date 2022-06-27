@@ -11,3 +11,5 @@ Reduce speed momentarily on hard landing
 max out slide speed/time value
 
 Force uncrouch on jump
+
+Projectiles visible from far away, small billboard

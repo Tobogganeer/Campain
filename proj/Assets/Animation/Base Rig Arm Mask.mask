@@ -1,0 +1,173 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!319 &31900000
+AvatarMask:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Base Rig Arm Mask
+  m_Mask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+  m_Elements:
+  - m_Path: 
+    m_Weight: 1
+  - m_Path: AK74M
+    m_Weight: 0
+  - m_Path: Balaclava
+    m_Weight: 0
+  - m_Path: Base Mesh
+    m_Weight: 0
+  - m_Path: Base Rig
+    m_Weight: 0
+  - m_Path: Base Rig/root
+    m_Weight: 0
+  - m_Path: Base Rig/root/foot_ik.L
+    m_Weight: 0
+  - m_Path: Base Rig/root/foot_ik.R
+    m_Weight: 0
+  - m_Path: Base Rig/root/foot_ik_pole.L
+    m_Weight: 0
+  - m_Path: Base Rig/root/foot_ik_pole.R
+    m_Weight: 0
+  - m_Path: Base Rig/root/hips
+    m_Weight: 0
+  - m_Path: Base Rig/root/hips/hip.L
+    m_Weight: 0
+  - m_Path: Base Rig/root/hips/hip.L/thigh.L
+    m_Weight: 0
+  - m_Path: Base Rig/root/hips/hip.L/thigh.L/lower_leg.L
+    m_Weight: 0
+  - m_Path: Base Rig/root/hips/hip.L/thigh.L/lower_leg.L/foot.L
+    m_Weight: 0
+  - m_Path: Base Rig/root/hips/hip.L/thigh.L/lower_leg.L/foot.L/toe.L
+    m_Weight: 0
+  - m_Path: Base Rig/root/hips/hip.R
+    m_Weight: 0
+  - m_Path: Base Rig/root/hips/hip.R/thigh.R
+    m_Weight: 0
+  - m_Path: Base Rig/root/hips/hip.R/thigh.R/lower_leg.R
+    m_Weight: 0
+  - m_Path: Base Rig/root/hips/hip.R/thigh.R/lower_leg.R/foot.R
+    m_Weight: 0
+  - m_Path: Base Rig/root/hips/hip.R/thigh.R/lower_leg.R/foot.R/toe.R
+    m_Weight: 0
+  - m_Path: Base Rig/root/hips/spine_base
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/arm_ik_pole.L
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/arm_ik_pole.R
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/hand_ik.L
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/hand_ik.R
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/hand_ik.R/weapon_main
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/hand_ik.R/weapon_main/weapon_bolt
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/hand_ik.R/weapon_main/weapon_extra_1
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/hand_ik.R/weapon_main/weapon_extra_2
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/hand_ik.R/weapon_main/weapon_magazine
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/neck
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/neck/head
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.L
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.L/upper_arm.L
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.L/upper_arm.L/forearm.L
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.L/upper_arm.L/forearm.L/hand.L
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.L/upper_arm.L/forearm.L/hand.L/index_hand.L
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.L/upper_arm.L/forearm.L/hand.L/index_hand.L/index_base.L
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.L/upper_arm.L/forearm.L/hand.L/index_hand.L/index_base.L/index_mid.L
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.L/upper_arm.L/forearm.L/hand.L/middle_hand.L
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.L/upper_arm.L/forearm.L/hand.L/middle_hand.L/middle_base.L
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.L/upper_arm.L/forearm.L/hand.L/middle_hand.L/middle_base.L/middle_mid.L
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.L/upper_arm.L/forearm.L/hand.L/pinky_hand.L
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.L/upper_arm.L/forearm.L/hand.L/pinky_hand.L/pinky_base.L
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.L/upper_arm.L/forearm.L/hand.L/pinky_hand.L/pinky_base.L/pinky_mid.L
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.L/upper_arm.L/forearm.L/hand.L/ring_hand.L
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.L/upper_arm.L/forearm.L/hand.L/ring_hand.L/ring_base.L
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.L/upper_arm.L/forearm.L/hand.L/ring_hand.L/ring_base.L/ring_mid.L
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.L/upper_arm.L/forearm.L/hand.L/thumb_hand.L
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.L/upper_arm.L/forearm.L/hand.L/thumb_hand.L/thumb_base.L
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.L/upper_arm.L/forearm.L/hand.L/thumb_hand.L/thumb_base.L/thumb_mid.L
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.R
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.R/upper_arm.R
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.R/upper_arm.R/forearm.R
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.R/upper_arm.R/forearm.R/hand.R
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.R/upper_arm.R/forearm.R/hand.R/index_hand.R
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.R/upper_arm.R/forearm.R/hand.R/index_hand.R/index_base.R
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.R/upper_arm.R/forearm.R/hand.R/index_hand.R/index_base.R/index_mid.R
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.R/upper_arm.R/forearm.R/hand.R/middle_hand.R
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.R/upper_arm.R/forearm.R/hand.R/middle_hand.R/middle_base.R
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.R/upper_arm.R/forearm.R/hand.R/middle_hand.R/middle_base.R/middle_mid.R
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.R/upper_arm.R/forearm.R/hand.R/pinky_hand.R
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.R/upper_arm.R/forearm.R/hand.R/pinky_hand.R/pinky_base.R
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.R/upper_arm.R/forearm.R/hand.R/pinky_hand.R/pinky_base.R/pinky_mid.R
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.R/upper_arm.R/forearm.R/hand.R/ring_hand.R
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.R/upper_arm.R/forearm.R/hand.R/ring_hand.R/ring_base.R
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.R/upper_arm.R/forearm.R/hand.R/ring_hand.R/ring_base.R/ring_mid.R
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.R/upper_arm.R/forearm.R/hand.R/thumb_hand.R
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.R/upper_arm.R/forearm.R/hand.R/thumb_hand.R/thumb_base.R
+    m_Weight: 1
+  - m_Path: Base Rig/root/hips/spine_base/spine_mid/spine_top/shoulder.R/upper_arm.R/forearm.R/hand.R/thumb_hand.R/thumb_base.R/thumb_mid.R
+    m_Weight: 1
+  - m_Path: Boots
+    m_Weight: 0
+  - m_Path: Gloves
+    m_Weight: 0
+  - m_Path: Goggles
+    m_Weight: 0
+  - m_Path: Helmet
+    m_Weight: 0
+  - m_Path: Jacket
+    m_Weight: 0
+  - m_Path: Pants
+    m_Weight: 0
+  - m_Path: Plate Carrier
+    m_Weight: 0
+  - m_Path: Vest Bags
+    m_Weight: 0

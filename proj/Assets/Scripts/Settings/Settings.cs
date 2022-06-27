@@ -83,11 +83,11 @@ public static class Settings
         QualityManager.SetMaxFramerate(CurrentSettings.maxFramerate);
         QualityManager.SetVSync(CurrentSettings.vsync);
 
-        AudioManager.SetMasterVolume(CurrentSettings.masterVolume / 100f);
-        AudioManager.SetAmbientVolume(CurrentSettings.ambientVolume / 100f);
-        AudioManager.SetSFXVolume(CurrentSettings.sfxVolume / 100f);
+        AudioMaster.SetMasterVolume(CurrentSettings.masterVolume / 100f);
+        AudioMaster.SetAmbientVolume(CurrentSettings.ambientVolume / 100f);
+        AudioMaster.SetSFXVolume(CurrentSettings.sfxVolume / 100f);
 
         FPSCamera.CurrentSensFromSettings = CurrentSettings.sensitivity;
-        AudioManager.SetLowPass(1f);
+        AudioMaster.SetLowPass(1f);
     }
 }

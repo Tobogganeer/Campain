@@ -81,6 +81,11 @@ public static class VectorExtensions
 		return Vector3.Normalize(target - origin);
     }
 
+	public static Vector3 DirectionTo_NoNormalize(this Vector3 origin, Vector3 target)
+	{
+		return target - origin;
+	}
+
 	public static Vector3 With(this Vector3 v, float? x = null, float? y = null, float? z = null)
     {
 		return new Vector3(x ?? v.x, y ?? v.y, z ?? v.z);

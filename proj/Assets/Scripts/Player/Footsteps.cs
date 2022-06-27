@@ -13,7 +13,7 @@ public class Footsteps : MonoBehaviour
     public Transform footSource;
     //public float stepSpeed = 2.5f;
 
-    private Foot foot;
+    public static Foot foot;
 
     private const float MIN_AIRTIME = 0.2f;
 
@@ -47,19 +47,20 @@ public class Footsteps : MonoBehaviour
             range = 15f;
         }
 
-        AudioManager.Play(GetSound(foot), footSource.position, null, range, AudioCategory.SFX, vol);
+        AudioManager.Play(new Audio(GetSound(foot)).SetPosition(footSource.position).SetDistance(range).SetVolume(vol));
     }
 
     private void PlayerMovement_OnLand(float airtime)
     {
-        if (airtime > MIN_AIRTIME) AudioManager.Play(AudioArray.Drop, footSource.position, null, 35, AudioCategory.SFX, Mathf.Clamp01(airtime * 0.6f));
+        if (airtime > MIN_AIRTIME) AudioManager.Play(new Audio("Drop").SetPosition(footSource.position).SetVolume(Mathf.Clamp01(airtime * 0.6f)));
+            //AudioManager.Play(AudioArray.Drop, footSource.position, null, 35, AudioCategory.SFX, Mathf.Clamp01(airtime * 0.6f));
     }
 
-    private AudioArray GetSound(Foot foot)
+    private string GetSound(Foot foot)
     {
-        if (PlayerMovement.Sliding) return AudioArray.Slide;
+        if (PlayerMovement.Sliding) return "Slide";
 
-        return foot == Foot.Right ? AudioArray.RightFoot : AudioArray.LeftFoot;
+        return foot == Foot.Right ? "RightFoot" : "LeftFoot";
     }
 
 

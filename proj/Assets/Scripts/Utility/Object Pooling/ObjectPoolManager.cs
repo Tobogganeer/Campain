@@ -6,7 +6,20 @@ using UnityEngine;
 //{
 public class ObjectPoolManager : MonoBehaviour
 {
-    private static ObjectPoolManager instance;
+    private static ObjectPoolManager _instance;
+    private static ObjectPoolManager instance
+    {
+        get
+        {
+            if (_instance == null)
+                _instance = new GameObject("Object Pool Manager").AddComponent<ObjectPoolManager>();
+            return _instance;
+        }
+        set
+        {
+            _instance = value;
+        }
+    }
     private void Awake()
     {
         instance = this;
@@ -26,7 +39,7 @@ public class ObjectPoolManager : MonoBehaviour
         }
     }
 
-    [Header("These pools will be created when the game starts. You can also call the CreatePool() method.")]
+    [Header("Created when the game starts. Can also call CreatePool()")]
     public List<InspectorObjectPool> inspectorPools = new List<InspectorObjectPool>();
     public Dictionary<PooledObject, ObjectPool> objectPools = new Dictionary<PooledObject, ObjectPool>();
 
@@ -40,12 +53,6 @@ public class ObjectPoolManager : MonoBehaviour
 
     private static void CreatePool(InspectorObjectPool pool)
     {
-        if (instance == null)
-        {
-            Debug.LogWarning("Cannot get pooled object, instance is null!");
-            return;
-        }
-
         if (instance.objectPools.ContainsKey(pool.objectType))
         {
             Debug.LogWarning($"Tried to create pool with type '{pool.objectType}', but a pool with that type already exists!");
@@ -55,7 +62,7 @@ public class ObjectPoolManager : MonoBehaviour
         Transform holder = new GameObject(pool.name + " - Object Pool").transform;
         holder.parent = instance.transform;
 
-        Queue<PooledObjectInstance> objectPool = new Queue<PooledObjectInstance>();
+        Queue<PooledObjectInstance> objectPool = new Queue<PooledObjectInstance>(pool.numToSpawn);
 
         for (int i = 0; i < pool.numToSpawn; i++)
         {
@@ -68,12 +75,6 @@ public class ObjectPoolManager : MonoBehaviour
 
     public static GameObject GetObject(PooledObject objectType)
     {
-        if (instance == null)
-        {
-            Debug.LogWarning("Cannot get pooled object, instance is null!");
-            return null;
-        }
-
         if (instance.objectPools.TryGetValue(objectType, out ObjectPool pool))
         {
             PooledObjectInstance obj = pool.pool.Dequeue();
@@ -92,12 +93,6 @@ public class ObjectPoolManager : MonoBehaviour
 
     public static GameObject GetObject(PooledObject objectType, Vector3 position, Quaternion rotation)
     {
-        if (instance == null)
-        {
-            Debug.LogWarning("Cannot get pooled object, instance is null!");
-            return null;
-        }
-
         if (instance.objectPools.TryGetValue(objectType, out ObjectPool pool))
         {
             PooledObjectInstance obj = pool.pool.Dequeue();
@@ -118,12 +113,6 @@ public class ObjectPoolManager : MonoBehaviour
     {
         if (numAdditionalObjects <= 0) return;
 
-        if (instance == null)
-        {
-            Debug.LogWarning("Cannot get pooled object, instance is null!");
-            return;
-        }
-
         if (instance.objectPools.TryGetValue(objectType, out ObjectPool pool))
         {
             for (int i = 0; i < numAdditionalObjects; i++)
@@ -141,12 +130,6 @@ public class ObjectPoolManager : MonoBehaviour
     public static void DecreasePoolSize(PooledObject objectType, int numObjectsToDelete = 1)
     {
         if (numObjectsToDelete <= 0) return;
-
-        if (instance == null)
-        {
-            Debug.LogWarning("Cannot get pooled object, instance is null!");
-            return;
-        }
 
         if (instance.objectPools.TryGetValue(objectType, out ObjectPool pool))
         {
