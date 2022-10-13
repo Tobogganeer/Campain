@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class DebugConsole : MonoBehaviour
 {
@@ -54,7 +55,7 @@ public class DebugConsole : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.BackQuote)) showConsole = !showConsole;
+        if (Keyboard.current.backquoteKey.wasPressedThisFrame) showConsole = !showConsole;
     }
 
     private void OnGUI()

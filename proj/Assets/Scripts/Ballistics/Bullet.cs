@@ -9,7 +9,7 @@ public class Bullet : MonoBehaviour
     [HideInInspector] public AnimationCurve damageFalloff;
     [HideInInspector] public float rbForce;
     [HideInInspector] public float armourPenetration;
-    [HideInInspector] public Hitbox.DamageRegions hitboxDamageMultipliers;
+    [HideInInspector] public WeaponData weaponData;
     [HideInInspector] public float baseVelocity;
     [HideInInspector] public BulletBallistics ballistics;
 
@@ -39,12 +39,12 @@ public class Bullet : MonoBehaviour
         WeaponData data = weapon.Data;
 
         velocityLossPerSecond = data.velocityLossPerSecond;
-        baseDamage = data.baseDamage * weapon.GetDamageMultiplier();
+        baseDamage = data.baseDamage * weapon.Barrel.damageMult;
         damageFalloff = data.damageFalloff;
         rbForce = data.rbForce;
         armourPenetration = data.armourPenetration;
-        hitboxDamageMultipliers = data.hitboxDamageMultipliers;
-        baseVelocity = weapon.GetBulletVelocity();
+        weaponData = data;
+        baseVelocity = weapon.Barrel.bulletVelocity;
         ballistics = data.ballistics;
 
         audioListenerTransform = Camera.main.transform;
@@ -70,7 +70,7 @@ public class Bullet : MonoBehaviour
 
         Vector3 point1 = transform.position;
 
-        velocity += Physics.gravity * Time.deltaTime * GravityMultiplier;
+        velocity += Physics.gravity * (Time.deltaTime * GravityMultiplier);
         Vector3 point2 = point1 + velocity * Time.deltaTime;
 
         CalculatePenetration(point1, point2);
@@ -94,7 +94,10 @@ public class Bullet : MonoBehaviour
             cracked = true;
             float percent = Mathf.InverseLerp(CrackDistThreshold, 0, crackDist);
             if (Random.value > percent)
+            {
                 AudioManager.Play(new Audio("BulletCrack").SetPosition(transform.position).SetDistance(20));
+                HUD.AddSuppressedVignette(0.2f);
+            }
                 //AudioManager.Play(AudioArray.BulletCrack, transform.position, null, 20);
         }
         if (!whized && Vector3.Distance(audioListenerTransform.position, transform.position) < WhizDistThreshold)
@@ -114,7 +117,6 @@ public class Bullet : MonoBehaviour
         dir /= totalDist;
         // Normalize without extra sqrt call
 
-        RaycastHit frontOfObj;
         //RaycastHit backOfObj;
         float distTravelled = 0;
 
@@ -123,29 +125,33 @@ public class Bullet : MonoBehaviour
 
         for (int i = 0; i < MaxChecks; i++)
         {
-            if (Physics.Raycast(new Ray(origin, dir), out frontOfObj, totalDist, LayerMasks.BulletLayerMask))
+            if (Physics.Raycast(new Ray(origin, dir), out RaycastHit frontOfObj, totalDist, LayerMasks.BulletLayerMask))
             {
                 distTravelled += frontOfObj.distance;
 
                 float hitAngle = Vector3.Angle(frontOfObj.normal, dir) - 90;
-                float surfaceHardness = SurfaceHardnesses.DEFAULT_HARDNESS;
+
+                SurfaceSettings surf = SurfaceSettings.Default;
 
                 if (frontOfObj.collider.GetSurface(out Surface surface))
-                    surfaceHardness = surface.GetHardness();
+                    surf = surface.settings;
 
                 float angle = Remap.Float(Mathf.Clamp(hitAngle, 0, 90), 0, 90, 0, 1);
 
                 FX.SpawnBulletHit_Debug(frontOfObj.point, frontOfObj.normal, transform);
+                AudioManager.Play(new Audio(surf.HitSound).SetPosition(frontOfObj.point));
 
-                if (!Bounce(surfaceHardness, angle, frontOfObj.normal, frontOfObj.point, ref dir, ref origin))
-                    Penetrate(surfaceHardness, ref frontOfObj, ref dir, ref origin, ref distTravelled);
+                if (!Bounce(surf.Hardness, angle, frontOfObj.normal, frontOfObj.point, ref dir, ref origin))
+                    Penetrate(surf.Hardness, ref frontOfObj, ref dir, ref origin, ref distTravelled);
+
+                if (frontOfObj.collider.TryGetComponent(out IBulletDamagable damagable))
+                    damagable.TakeBulletDamage(new DamageDetails(baseDamage * Mathf.InverseLerp(0, baseVelocity, velocity.magnitude), DamageSource.Bullet, dir, weaponData.type));
 
                 if (frontOfObj.collider.TryGetComponent(out Rigidbody rb))
                     rb.AddForceAtPosition((-frontOfObj.normal + dir) * 3, frontOfObj.point, ForceMode.Impulse);
 
-
-                if (frontOfObj.collider.TryGetComponent(out IBulletDamagable damagable))
-                    damagable.TakeBulletDamage(new DamageDetails(baseDamage * Mathf.InverseLerp(0, baseVelocity, velocity.magnitude), DamageSource.Bullet));
+                if (frontOfObj.collider.TryGetComponent(out RagdollBone bone))
+                    bone.DeathTwitch(3, 50f);
             }
         }
 
@@ -169,7 +175,7 @@ public class Bullet : MonoBehaviour
             Vector3 velDir = velocity.normalized;
 
             Vector3 bounced = Vector3.Reflect(velDir, normal);
-            bounced += Random.insideUnitSphere * ballistics.BounceDirectionRandomization * surfaceHardness;
+            bounced += Random.insideUnitSphere * (ballistics.BounceDirectionRandomization * surfaceHardness);
             bounced.Normalize();
 
             velMag -= ballistics.BounceVelocityLoss.Evaluate(angle01);
@@ -190,9 +196,9 @@ public class Bullet : MonoBehaviour
     {
         // Try to penetrate into surface
         const float BackCastLength = 100f;
-        float wallThickness = 0;
+        float wallThickness;
 
-        bool exits = frontHit.collider.Raycast(new Ray(frontHit.point + dir * BackCastLength, -dir), out RaycastHit backOfObj, BackCastLength);
+        bool exits = frontHit.collider.Raycast(new Ray(frontHit.point + dir * BackCastLength, -dir), out RaycastHit backOfObj, BackCastLength * 1.1f);
 
         if (exits)
         {
@@ -209,9 +215,9 @@ public class Bullet : MonoBehaviour
                 float velMag = velocity.magnitude;
                 Vector3 velDir = velocity.normalized;
 
-                velDir += Random.insideUnitSphere * ballistics.PenetrationDirectionRandomization * surfaceHardness
+                velDir += Random.insideUnitSphere * (ballistics.PenetrationDirectionRandomization * surfaceHardness
                     * Mathf.Clamp01(wallThickness) * Mathf.Clamp(Mathf.InverseLerp(baseVelocity, 0, velocity.magnitude), 0.4f, 1f)
-                    * Mathf.Clamp(totalDistTravelled * 0.01f, 0.2f, 1f);
+                    * Mathf.Clamp(totalDistTravelled * 0.01f, 0.2f, 1f));
                 velDir.Normalize();
                 // Bounce less the faster bullet is going
                 // Was making them bounce like nothing so clamped to -20%- 40%
@@ -230,6 +236,9 @@ public class Bullet : MonoBehaviour
             }
             else
             {
+                // TEMP DEV DO NOT PENETRATE
+                origin = backOfObj.point;
+
                 // TODO: Apply damage to obj
                 // TODO: Surface FX
             }
@@ -255,7 +264,7 @@ public class Bullet : MonoBehaviour
 
         for (float i = 0; i < 1; i += step)
         {
-            predictedVel += Physics.gravity * step * GravityMultiplier;
+            predictedVel += Physics.gravity * (step * GravityMultiplier);
             //predictedVel.x = Mathf.MoveTowards(predictedVel.x, 0, drag * step);
             //predictedVel.z = Mathf.MoveTowards(predictedVel.z, 0, drag * step);
             Vector3 point2 = point1 + predictedVel * step;

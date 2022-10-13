@@ -1,162 +1,196 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System;
 
-public class Timer// : IDisposable
+public class Timer
 {
+    public event Action<State> Completed = delegate { };
+    public event Action<float> Tick = delegate { };
+    public readonly int ID;
+    public float Time { get; private set; }
+    public bool Running { get; private set; }
+    public bool DestroyOnCompletion { get; set; } = true;
+    private bool destroyed = false;
+
+    #region Constructors
+    /// <summary>
+    /// Alternate to 'new Timer(time, callback);' 
+    /// </summary>
+    public static Timer Create(float time, Action<State> callback, int id = -1) => new Timer(time, callback, id);
+    /// <summary>
+    /// Alternate to 'new Timer(time, callback);' (Only calls on completion) 
+    /// </summary>
+    public static Timer Create(float time, Action callback, int id = -1) => new Timer(time, callback, id);
+    /// <summary>
+    /// Alternate to 'new Timer(time, callback);' 
+    /// </summary>
+    public static Timer New(float time, Action<State> callback, int id = -1) => new Timer(time, callback, id);
+    /// <summary>
+    /// Alternate to 'new Timer(time, callback);' (Only calls on completion)
+    /// </summary>
+    public static Timer New(float time, Action callback, int id = -1) => new Timer(time, callback, id);
+
+    public Timer(float time, Action<State> callback, int id = -1)
+    {
+        Time = time;
+        Completed += callback;
+
+        Init();
+    }
+
+    public Timer(float time, Action callback, int id = -1)
+    {
+        Time = time;
+        Completed += (state) => { if (state == State.Finished) callback(); };
+
+        Init();
+    }
+
+    #endregion
+
+    private void Init()
+    {
+        TimerManager.Add(this);
+        Running = true;
+    }
+
+    private void Update(float dt)
+    {
+        if (!Running || destroyed) return;
+
+        Time -= dt;
+        Tick(Time);
+
+        if (Time <= 0)
+        {
+            Running = false;
+            Completed(State.Finished);
+            if (DestroyOnCompletion)
+                Destroy();
+        }
+    }
+
+
+    public void Start()
+    {
+        if (destroyed) return;
+
+        if (!Running)
+        {
+            Running = true;
+        }
+    }
+
+    public void Restart(float time)
+    {
+        if (destroyed) return;
+
+        if (!Running)
+        {
+            Time = time;
+            Running = true;
+        }
+    }
+
+    public void Stop()
+    {
+        if (destroyed) return;
+
+        if (Running)
+        {
+            Running = false;
+            Completed(State.Stopped);
+        }
+    }
+
+    public void Destroy()
+    {
+        if (destroyed) return;
+
+        Stop();
+        TimerManager.Remove(this);
+        destroyed = true;
+    }
+
+
+    public Timer OnTick(Action<float> tick)
+    {
+        Tick += tick;
+        return this;
+    }
+
+    public Timer DestroyOnFinish(bool destroy)
+    {
+        DestroyOnCompletion = destroy;
+        return this;
+    }
+
+    public static void DestroyAll(int id) => ClearID(id);
+
+    public static void ClearID(int id)
+    {
+        TimerManager.ClearID(id);
+    }
+
+    public enum State
+    {
+        None,
+        Finished,
+        Stopped
+    }
+
+    #region Manager
+
     public class TimerManager : MonoBehaviour
     {
-        public static TimerManager instance;
+        private static TimerManager instance;
+        private static List<Timer> timers = new List<Timer>();
+        private static int next = 0;
 
-        private List<Timer> timers = new List<Timer>();
-        private Queue<Timer> toAdd = new Queue<Timer>();
-        private Queue<Timer> toRemove = new Queue<Timer>();
-
-        public void AddTimer(Timer timer)
+        public static void Add(Timer timer)
         {
-            toAdd.Enqueue(timer);
+            Create();
+
+            timers.Add(timer);
         }
 
-        public void RemoveTimer(Timer timer)
+        public static void Remove(Timer timer)
         {
-            toRemove.Enqueue(timer);
+            Create();
+
+            timers.Remove(timer);
+        }
+
+        public static void ClearID(int id)
+        {
+            if (id == -1) return;
+
+            Create();
+
+            for (int i = timers.Count; i >= 0; i--)
+            {
+                if (timers[i].ID == id)
+                    timers.RemoveAt(i);
+            }
+        }
+
+        private static void Create()
+        {
+            if (instance == null)
+                instance = new GameObject("TimerManager").AddComponent<TimerManager>();
         }
 
         private void Update()
         {
-            while (toAdd.Count > 0)
+            float dt = UnityEngine.Time.deltaTime;
+
+            for (int i = timers.Count; i >= 0; i--)
             {
-                Timer timer = toAdd.Dequeue();
-                if (!timers.Contains(timer)) timers.Add(timer);
-            }
-
-            while (toRemove.Count > 0)
-            {
-                Timer timer = toRemove.Dequeue();
-                if (timers.Contains(timer)) timers.Remove(timer);
-            }
-
-            toAdd.Clear();
-
-            toRemove.Clear();
-
-            foreach (Timer timer in timers)
-            {
-                timer.Update();
-            }
-        }
-
-        public void ClearTimers(int id)
-        {
-            if (id == -1) return;
-
-            foreach (Timer timer in timers)
-            {
-                if (timer.id == id) RemoveTimer(timer);
+                timers[i].Update(dt);
             }
         }
     }
 
-    Action action;
-    float time;
-    bool isDestroyed;
-    int id;
-
-    private Timer(Action action, float afterTime)
-    {
-        CheckManagerInstance();
-
-        this.action = action;
-        time = afterTime;
-        isDestroyed = false;
-        id = -1;
-
-        TimerManager.instance.AddTimer(this);
-    }
-
-    private Timer(Action action, float afterTime, int id)
-    {
-        CheckManagerInstance();
-
-        this.action = action;
-        time = afterTime;
-        isDestroyed = false;
-        this.id = id;
-
-        TimerManager.instance.AddTimer(this);
-    }
-
-    /// <summary>
-    /// Runs the specified action <paramref name="action"/> after time <paramref name="time"/>.
-    /// </summary>
-    /// <param name="action">The action to run on completion</param>
-    /// <param name="time">The time to run the action after</param>
-    public static void Run(Action action, float time)
-    {
-        new Timer(action, time);
-    }
-
-    /// <summary>
-    /// Runs the specified action <paramref name="action"/> after time <paramref name="time"/>.
-    /// </summary>
-    /// <param name="action">The action to run on completion</param>
-    /// <param name="time">The time to run the action after</param>
-    /// <param name="id">The id of the timer (for referencing later)</param>
-    public static void Run(Action action, float time, int id)
-    {
-        new Timer(action, time, id);
-    }
-
-    public void Update()
-    {
-        if (!isDestroyed)
-        {
-            time -= Time.deltaTime;
-            if (time <= 0)
-            {
-                action?.Invoke();
-                Dispose();
-            }
-        }
-    }
-
-    public void Dispose()
-    {
-        //Dispose(true);
-        isDestroyed = true;
-        TimerManager.instance.RemoveTimer(this);
-
-        GC.SuppressFinalize(this);
-    }
-
-    public static void ClearTimers(int id)
-    {
-        if (id == -1) return;
-
-        CheckManagerInstance();
-
-        TimerManager.instance.ClearTimers(id);
-    }
-
-    private static void CheckManagerInstance()
-    {
-        if (TimerManager.instance == null)
-        {
-            TimerManager.instance = new GameObject("TimerManager", typeof(TimerManager)).GetComponent<TimerManager>();
-        }
-    }
-
-    //protected virtual void Dispose(bool disposing)
-    //{
-    //    if (!isDestroyed)
-    //    {
-    //        if (!disposing)
-    //        {
-    //
-    //        }
-    //
-    //        isDestroyed = true;
-    //    }
-    //}
+    #endregion
 }

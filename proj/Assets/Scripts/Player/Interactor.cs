@@ -19,13 +19,15 @@ public class Interactor : MonoBehaviour
 
     public bool Interacting => interacting;
 
+    // WILL NOT WORK RN INPUT SYSTEM NOT SET UP RIGHT (no key up or held detect)
+
     private void Update()
     {
         cooldown -= Time.deltaTime;
 
         FetchInteractables();
 
-        if (Input.GetKeyDown(Inputs.Interact) && cooldown <= 0)
+        if (PlayerInputs.Interact && cooldown <= 0)
         {
             bool setCooldown = true;
 
@@ -54,7 +56,7 @@ public class Interactor : MonoBehaviour
             player.animator.UseArmAction();
         }
 
-        if (Input.GetKey(Inputs.Interact) && interacting)
+        if (PlayerInputs.Interact && interacting)
         {
             interactTime -= Time.deltaTime;
 
@@ -69,7 +71,7 @@ public class Interactor : MonoBehaviour
             }
         }
 
-        if (Input.GetKeyUp(Inputs.Interact) && interacting)
+        if (PlayerInputs.Interact && interacting)
         {
             if (interactTime > 0)
             {

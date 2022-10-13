@@ -84,12 +84,18 @@ public class AudioMaster : MonoBehaviour
 
     private static float GetVolume(float volume0_1)
     {
+        // https://github.com/UnityTechnologies/open-project-1/blob/main/UOP1_Project/Assets/Scripts/Audio/AudioManager.cs
+        //return (volume0_1 - 1f) * 80f;
+        // Idk if I wanna switch to that
+
+        //*
         float clamped = Mathf.Clamp(volume0_1, 0.001f, 1f);
 
         float remapped = 20f * Mathf.Log10(clamped);
         remapped = Remap.Float(remapped, MIN_LOG_OUT, MAX_LOG_OUT, MIN_AUDIO_DB, MAX_AUDIO_DB);
 
         return remapped;
+        //*/
     }
 
     public static void SetLowPass(float percent0_1)

@@ -10,7 +10,7 @@ public class FPSLimiter : MonoBehaviour
 
     void Start()
     {
-	    QualitySettings.vSyncCount = vsync;
+	QualitySettings.vSyncCount = vsync;
         Application.targetFrameRate = target;
     }
 }

@@ -27,12 +27,12 @@ MonoBehaviour:
   fireRateRPM: 650
   crouchRecoilMult: 0.7
   crouchOffsets:
-    pos: {x: -0.15, y: -0.1, z: -0.15}
-    rot: {x: 0, y: 0, z: 25}
-    rot_aim: {x: 0, y: 0, z: 10}
+    pos: {x: -0.12, y: -0.1, z: -0.1}
+    rot: {x: 0, y: 0, z: 30}
+    rot_aim: {x: 0, y: 0, z: 8}
   ballistics: {fileID: 11400000, guid: d9b9eb166781a9340848f98b5999335c, type: 2}
   velocityLossPerSecond: 30
-  baseDamage: 31
+  baseDamage: 38
   damageFalloff:
     serializedVersion: 2
     m_Curve:
@@ -67,63 +67,60 @@ MonoBehaviour:
   rbForce: 7
   armourPenetration: 0.6
   hitboxDamageMultipliers:
-    head: 2.5
+    head: 3.5
     chest: 1
     abdomen: 1.25
     arms: 0.65
     legs: 0.45
+  reloadSound: P19_Reload
   attachments:
     barrels:
-    - name: Default
-      shootSound: 150
-      shootVolume: 1
-      shootMechVolume: 1
-      bulletVelocity: 550
-      recoil: {x: 9, y: 21}
-      innaccuracyMult: 1
-      damageMult: 1
-      type: 0
-    - name: Suppressed
-      shootSound: 151
-      shootVolume: 0.45
-      shootMechVolume: 0.65
-      bulletVelocity: 425
-      recoil: {x: 12, y: 14}
-      innaccuracyMult: 0.9
-      damageMult: 0.9
-      type: 1
-    - name: Compensator
-      shootSound: 152
-      shootVolume: 0.4
-      shootMechVolume: 0.8
-      bulletVelocity: 275
-      recoil: {x: 6, y: 6}
-      innaccuracyMult: 1.2
-      damageMult: 0.7
-      type: 2
+      values:
+      - name: Default
+        key: 0
+        value:
+          name: Default
+          shootSound: P19_Fire_Default
+          shootVolume: 0.7
+          shootMechVolume: 1
+          bulletVelocity: 550
+          recoil: {x: 12, y: 27}
+          innaccuracyMult: 1
+          damageMult: 1
+          type: 0
+      - name: Suppressed
+        key: 1
+        value:
+          name: Suppressed
+          shootSound: P19_Fire_Suppressed
+          shootVolume: 1
+          shootMechVolume: 0.65
+          bulletVelocity: 425
+          recoil: {x: 15, y: 19}
+          innaccuracyMult: 0.9
+          damageMult: 0.9
+          type: 1
     underbarrels:
-    - name: Nothing
-      type: 0
-    - name: Flashlight
-      type: 1
-    - name: Laser
-      type: 2
+      values: []
     sights:
-    - name: IronSights
-      aimPos: {x: -0.1146, y: 0.0365, z: -0.05}
-      fovMult: 0.65
-      recoilMult: 0.8
-      sensMult: 0.5
-      type: 0
-    - name: Holo
-      aimPos: {x: -0.123, y: 0, z: -0.08}
-      fovMult: 0.55
-      recoilMult: 0.7
-      sensMult: 0.35
-      type: 1
-    - name: Acog
-      aimPos: {x: -0.123, y: 0, z: -0.05}
-      fovMult: 0.35
-      recoilMult: 0.5
-      sensMult: 0.15
-      type: 2
+      values:
+      - name: IronSights
+        key: 0
+        value:
+          name: 
+          aimPos: {x: -0.1145, y: 0.036, z: 0.1}
+          fovMult: 0.55
+          recoilMult: 0.7
+          sensMult: 0.4
+          adsBlur: 28
+          type: 0
+      - name: Holo
+        key: 1
+        value:
+          name: 
+          aimPos: {x: -0.1145, y: 0.036, z: 0.1}
+          fovMult: 0.35
+          recoilMult: 0.5
+          sensMult: 0.25
+          adsBlur: 28
+          type: 0

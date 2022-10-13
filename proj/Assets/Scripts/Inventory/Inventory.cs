@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class Inventory
 {
-    public event Action<Inventory> OnInventoryChanged;
+    //public event Action<Inventory> OnInventoryChanged;
 
     public readonly int slotCount;
     public readonly ItemStack[] items;

@@ -1,48 +1,59 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [System.Serializable]
 public class Attachments
 {
-    [Header("Ensure arrays are in enum order")]
-    [SerializeField] private Barrel[] barrels;
-    [SerializeField] private Underbarrel[] underbarrels;
-    [SerializeField] private Sight[] sights;
+    [SerializeField] private SerializableDictionary<BarrelType, Barrel> barrels = new SerializableDictionary<BarrelType, Barrel>();
+    [SerializeField] private SerializableDictionary<UnderbarrelType, Underbarrel> underbarrels = new SerializableDictionary<UnderbarrelType, Underbarrel>();
+    [SerializeField] private SerializableDictionary<SightType, Sight> sights = new SerializableDictionary<SightType, Sight>();
+
+    public int BarrelCount => barrels.Dict.Count;
+    public int UnderbarrelCount => underbarrels.Dict.Count;
+    public int SightCount => sights.Dict.Count;
 
     public Barrel Get(BarrelType type)
     {
-        return barrels[(int)type];
+        return barrels.Dict[type];
     }
 
     public Underbarrel Get(UnderbarrelType type)
     {
-        return underbarrels[(int)type];
+        return underbarrels.Dict[type];
     }
 
     public Sight Get(SightType type)
     {
-        return sights[(int)type];
+        return sights.Dict[type];
     }
 
 
-    public void Inspector_AssignNames()
+    public void AssignNamesAndTypes()
     {
-        // Not just using fixed size loop in case of more attachments later
-
-        for (int i = 0; i < barrels.Length; i++)
+        try
         {
-            barrels[i].name = barrels[i].type.ToString();
+            foreach (var item in barrels.values)
+                item.name = item.key.ToString();
+            foreach (var item in underbarrels.values)
+                item.name = item.key.ToString();
+            foreach (var item in sights.values)
+                item.name = item.key.ToString();
+
+            foreach (var item in barrels.Dict)
+                if (item.Value != null)
+                    item.Value.type = item.Key;
+            foreach (var item in underbarrels.Dict)
+                if (item.Value != null)
+                    item.Value.type = item.Key;
+            foreach (var item in sights.Dict)
+                if (item.Value != null)
+                    item.Value.type = item.Key;
         }
-
-        for (int i = 0; i < underbarrels.Length; i++)
+        catch (System.Exception ex)
         {
-            underbarrels[i].name = underbarrels[i].type.ToString();
-        }
-
-        for (int i = 0; i < sights.Length; i++)
-        {
-            sights[i].name = sights[i].type.ToString();
+            Debug.LogWarning("Caught expected error (weird OnValidate thing): " + ex);
         }
     }
 }
@@ -63,6 +74,7 @@ public class Barrel
     public float innaccuracyMult;
     public float damageMult = 1f;
 
+    [SerializeField, HideInInspector]
     public BarrelType type;
 }
 
@@ -72,6 +84,7 @@ public class Underbarrel
     [SerializeField, HideInInspector]
     public string name;
 
+    [SerializeField, HideInInspector]
     public UnderbarrelType type;
 }
 
@@ -85,6 +98,8 @@ public class Sight
     public float fovMult = 0.8f;
     public float recoilMult = 0.8f;
     public float sensMult = 0.5f;
+    public float adsBlur = 20;
 
+    [SerializeField, HideInInspector]
     public SightType type;
 }

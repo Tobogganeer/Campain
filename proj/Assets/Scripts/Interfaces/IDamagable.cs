@@ -15,12 +15,14 @@ public class DamageDetails
     public Vector3 origin;
     public Vector3 direction;
     public WeaponType weaponType;
+    public GameObject hitObj;
 
-    public DamageDetails(float amount, DamageSource source)
+    public DamageDetails(float amount, DamageSource source, Vector3 direction, WeaponType weaponType)
     {
         this.amount = amount;
         this.source = source;
-        this.weaponType = WeaponType.NP5;
+        this.direction = direction;
+        this.weaponType = weaponType;
     }
 
     public DamageDetails(float amount, Vector3 origin, Vector3 direction, WeaponType weaponType)

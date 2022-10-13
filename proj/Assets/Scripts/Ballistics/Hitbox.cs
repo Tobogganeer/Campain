@@ -66,6 +66,7 @@ public class Hitbox : MonoBehaviour, IBulletDamagable, IExplosionDamagable
     public void TakeBulletDamage(DamageDetails details)
     {
         details.amount *= GetBulletDamageMultiplier(details, region);
+        details.hitObj = gameObject;
         damagable.TakeDamage(details);
         if (region == HitboxRegion.Head)
             AudioManager.Play(new Audio("EnemyDie").SetVolume(0.3f).SetPitch(0.95f, 1.05f).Set2D());

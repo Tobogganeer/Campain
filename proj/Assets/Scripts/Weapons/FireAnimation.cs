@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class FireAnimation : MonoBehaviour
 {
+    public Transform target;
+
     public Settings settings;
 
     //[Space]
@@ -25,8 +27,8 @@ public class FireAnimation : MonoBehaviour
     [Space]
     public float positionInfluence = 0.03f;
 
-    [Space]
-    public KeyCode debugApplyKey = KeyCode.H;
+    //[Space]
+    //public KeyCode debugApplyKey = KeyCode.H;
 
     Vector3 amount;
     Vector3 targetAmount;
@@ -44,8 +46,8 @@ public class FireAnimation : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(debugApplyKey))
-            Apply(settings);
+        //if (Input.GetKeyDown(debugApplyKey))
+        //    Apply(settings);
 
         #region OLD SPRING
         /*
@@ -87,11 +89,11 @@ public class FireAnimation : MonoBehaviour
         rot = Vector3.Lerp(rot, targetRot + forRot, Time.deltaTime * smoothing);
 
         //transform.localPosition = (amount + forwardAmount) * positionInfluence;
-        transform.localPosition = amount * positionInfluence;
+        target.localPosition = amount * positionInfluence;
         //Vector3 forward = forwardAmount * positionInfluence;
         //forward /= Mathf.Clamp(amount.sqrMagnitude, 1, 10);
         //transform.localPosition = amount * positionInfluence + forward;
-        transform.localRotation = Quaternion.Euler(rot);
+        target.localRotation = Quaternion.Euler(rot);
 
         //time += Time.deltaTime;
     }

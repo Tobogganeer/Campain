@@ -60,4 +60,13 @@ public class Ragdoller : MonoBehaviour
             bone.AddForce(force, forceMode);
         }
     }
+
+    public void DeathTwitch(float initialForceAmount, float maxTwitchTime, float twitchForce)
+    {
+        foreach (RagdollBone bone in ragdollBones)
+        {
+            bone.AddForce(Random.insideUnitSphere * initialForceAmount, ForceMode.Impulse);
+            bone.DeathTwitch(maxTwitchTime, twitchForce);
+        }
+    }
 }

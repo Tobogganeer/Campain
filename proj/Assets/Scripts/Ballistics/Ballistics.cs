@@ -355,12 +355,15 @@ public struct BallisticsSettings
 
     public float CalculateFalloff(float currentFalloff, float penetrationDepth, Collider col)
     {
+        /*
         float fractionOfTotalPen = Mathf.InverseLerp(0, GetMaxPenetrationDepth(), penetrationDepth);
 
         if (col && col.GetSurface(out Surface surface)) fractionOfTotalPen *= surface.GetHardness();
         else fractionOfTotalPen *= SurfaceHardnesses.DEFAULT_HARDNESS;
 
         return Mathf.Clamp01(currentFalloff - fractionOfTotalPen);
+        */
+        return 0;
     }
 }
 

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class Weapon : MonoBehaviour
 {
@@ -24,26 +25,6 @@ public class Weapon : MonoBehaviour
     public Underbarrel Underbarrel => Data.attachments.Get(underbarrel);
     public Sight Sight => Data.attachments.Get(sight);
 
-    public Vector3 GetADSOffset()
-    {
-        return Data.attachments.Get(sight).aimPos;
-    }
-
-    public float GetADSFov()
-    {
-        return Data.attachments.Get(sight).fovMult;
-    }
-
-    public float GetBulletVelocity()
-    {
-        return Data.attachments.Get(barrel).bulletVelocity;
-    }
-
-    public float GetSensitivityMult()
-    {
-        return Data.attachments.Get(sight).sensMult;
-    }
-
     public Vector2 GetRecoil()
     {
         Vector2 rawRecoil = Data.attachments.Get(barrel).recoil;
@@ -60,25 +41,6 @@ public class Weapon : MonoBehaviour
         return finalRecoil;
     }
 
-    public string GetShootSound()
-    {
-        return Data.attachments.Get(barrel).shootSound;
-    }
-
-    public float GetShootVolume()
-    {
-        return Data.attachments.Get(barrel).shootVolume;
-    }
-    public float GetShootMechVolume()
-    {
-        return Data.attachments.Get(barrel).shootMechVolume;
-    }
-
-    public float GetDamageMultiplier()
-    {
-        return Data.attachments.Get(barrel).damageMult;
-    }
-
     public void ShakeCamera()
     {
         if (WeaponManager.InADS)
@@ -93,28 +55,40 @@ public class Weapon : MonoBehaviour
 
     public FireAnimation fireAnimation;
 
+    public SerializableDictionary<BarrelType, GameObject> barrels;
+    public SerializableDictionary<UnderbarrelType, GameObject> underbarrels;
+    public SerializableDictionary<SightType, GameObject> sights;
+
+    /*
     public GameObject suppresor;
     public GameObject defaultBarrel;
     public GameObject compensator;
 
     public GameObject holo;
     public GameObject acog;
+    */
 
     public ParticleSystem bulletCasings;
+    public GameObject fireball;
+    public GameObject swayBone;
 
     public Animator animator;
 
-    int bullets = 30;
+    public int magSize = 30;
+    int bullets;
 
     int curBarrel = 0;
     int curSight = 0;
+    int curUnderbarrel = 0;
 
     float incomingBulletTimer;
 
     private void Start()
     {
         SetBarrel();
+        SetUnderbarrel();
         SetSight();
+        bullets = magSize;
     }
 
     private void Update()
@@ -124,7 +98,11 @@ public class Weapon : MonoBehaviour
         timer -= Time.deltaTime;
         incomingBulletTimer -= Time.deltaTime;
 
-        if (Input.GetKey(KeyCode.K) && incomingBulletTimer < 0)
+        fireball.transform.localScale = Vector3.Lerp(fireball.transform.localScale, Vector3.zero, Time.deltaTime * 20);
+        if (fireball.transform.localScale.x < 0.01f)
+            fireball.SetActive(false);
+
+        if (Keyboard.current.kKey.isPressed && incomingBulletTimer < 0)
         {
             incomingBulletTimer = 60f / Data.fireRateRPM;
             Vector3 pos = barrelTip.position + barrelTip.forward * 200 + Random.insideUnitSphere * 3;
@@ -132,20 +110,25 @@ public class Weapon : MonoBehaviour
             Bullet.Create(pos, dir.normalized, this);
         }
 
-        if (timer < 0 && Input.GetKey(KeyCode.Mouse0) && bullets > 0)
+        if (timer < 0 && ((PlayerInputs.FireHeld && Data.fullAuto) || (PlayerInputs.Fire && !Data.fullAuto)) && bullets > 0)
         {
             bullets--;
             Bullet.Create(barrelTip.position, barrelTip.forward, this);
             timer = 60f / Data.fireRateRPM;
             ShakeCamera();
+            //animator.Play("Fire");
+            animator.Play("Fire", -1, 0);
+            //animator.CrossFadeInFixedTime("Fire", 0.1f);
             FPSCamera.AddRecoil(GetRecoil());
             fireAnimation.Apply(fireAnimation.settings);
+            fireball.SetActive(true);
+            fireball.transform.localScale = Vector3.one * 0.2f;
             //Transform parent = null;// barrelTip;
             Transform parent = barrelTip;
 
-            float vol = GetShootVolume();
-            float mechVol = GetShootMechVolume();
-            AudioManager.Play(new Audio(GetShootSound()).SetPosition(barrelTip.position).SetParent(parent).SetVolume(vol));
+            float vol = Barrel.shootVolume;
+            float mechVol = Barrel.shootMechVolume;
+            AudioManager.Play(new Audio(Barrel.shootSound).SetPosition(barrelTip.position).SetParent(parent).SetVolume(vol));
             AudioManager.Play(new Audio("NP5_Fire_Mech").SetPosition(barrelTip.position).SetParent(parent).SetVolume(0.55f * mechVol));
             AudioManager.Play(new Audio("NP5_Fire_Omph").SetPosition(barrelTip.position).SetParent(parent).SetVolume(0.45f * mechVol));
             AudioManager.Play(new Audio("NP5_Fire_Tech").SetPosition(barrelTip.position).SetParent(parent).SetVolume(0.45f * mechVol));
@@ -156,67 +139,79 @@ public class Weapon : MonoBehaviour
             //Debug.Log("New timer: " + timer);
         }
 
-        if (Input.GetKeyDown(KeyCode.UpArrow))
+        if (PlayerInputs.AttachBarrel)
         {
             curBarrel++;
-            if (curBarrel > 2)
+            if (curBarrel >= Data.attachments.BarrelCount)
                 curBarrel = 0;
             SetBarrel();
         }
 
-        if (Input.GetKeyDown(KeyCode.DownArrow))
+        if (PlayerInputs.AttachMisc)
+        {
+            curUnderbarrel++;
+            if (curUnderbarrel >= Data.attachments.UnderbarrelCount)
+                curUnderbarrel = 0;
+            SetUnderbarrel();
+        }
+
+        if (PlayerInputs.AttachSight)
         {
             curSight++;
-            if (curSight > 2)
+            if (curSight >= Data.attachments.SightCount)
                 curSight = 0;
             SetSight();
         }
 
-        if (Input.GetKeyDown(KeyCode.R))
+        if (PlayerInputs.Reload)
         {
-            AudioManager.Play(new Audio("NP5_Reload").SetPosition(transform.position).SetParent(transform).SetPitch(0.97f, 1.03f));
+            AudioManager.Play(new Audio(Data.reloadSound).SetPosition(transform.position).SetParent(transform).SetPitch(0.97f, 1.03f));
             //AudioManager.Play(AudioArray.NP5_Reload, transform.position, transform, 35, AudioCategory.SFX, 1, 0.97f, 1.03f);
-			//AudioManager.Play(AudioArray.NP5_Reload, transform.position, transform, 35, AudioCategory.SFX, 1, 0.97f, 1.03f);
-            bullets = 30;
+            //AudioManager.Play(AudioArray.NP5_Reload, transform.position, transform, 35, AudioCategory.SFX, 1, 0.97f, 1.03f);
+            bullets = magSize;
             animator.Play("Reload");
         }
     }
 
     void SetBarrel()
     {
-        defaultBarrel.SetActive(false);
-        compensator.SetActive(false);
-        suppresor.SetActive(false);
+        foreach (var item in barrels.Dict.Values)
+            item.SetActive(false);
+
+        //barrel = barrels.values[curBarrel].key;
         barrel = (BarrelType)curBarrel;
 
-        switch (barrel)
-        {
-            case BarrelType.Default:
-                defaultBarrel.SetActive(true);
-                break;
-            case BarrelType.Suppressed:
-                suppresor.SetActive(true);
-                break;
-            case BarrelType.Compensator:
-                compensator.SetActive(true);
-                break;
-        }
+        if (barrels.Dict.ContainsKey(barrel))
+            barrels.Dict[barrel].SetActive(true);
+        else
+            if (barrels.Dict.TryGetValue(BarrelType.Default, out var val)) val.SetActive(true);
+    }
+
+    void SetUnderbarrel()
+    {
+        foreach (var item in underbarrels.Dict.Values)
+            item.SetActive(false);
+
+        //underbarrel = underbarrels.values[curUnderbarrel].key;
+        underbarrel = (UnderbarrelType)curUnderbarrel;
+
+        if (underbarrels.Dict.ContainsKey(underbarrel))
+            underbarrels.Dict[underbarrel].SetActive(true);
+        else
+            if (underbarrels.Dict.TryGetValue(UnderbarrelType.Nothing, out var val)) val.SetActive(true);
     }
 
     void SetSight()
     {
-        holo.SetActive(false);
-        acog.SetActive(false);
+        foreach (var item in sights.Dict.Values)
+            item.SetActive(false);
+
+        //sight = sights.values[curSight].key;
         sight = (SightType)curSight;
 
-        switch (sight)
-        {
-            case SightType.Holo:
-                holo.SetActive(true);
-                break;
-            case SightType.Acog:
-                acog.SetActive(true);
-                break;
-        }
+        if (sights.Dict.ContainsKey(sight))
+            sights.Dict[sight].SetActive(true);
+        else
+            if (sights.Dict.TryGetValue(SightType.IronSights, out var val)) val.SetActive(true);
     }
 }

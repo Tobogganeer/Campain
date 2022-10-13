@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fd3cfe77340a78546a53b24e5e7210e0, type: 3}
   m_Name: Base
   m_EditorClassIdentifier: 
-  walkingSpeed: 2.5
-  runningSpeed: 3.5
+  walkingSpeed: 3
+  runningSpeed: 4
   unarmedRunSpeed: 5
   airSpeedMultiplier: 1.2
   crouchSpeed: 1.25

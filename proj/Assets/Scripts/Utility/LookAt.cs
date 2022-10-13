@@ -13,11 +13,15 @@ public class LookAt : MonoBehaviour
 
     public float maxAngle;
     public float rotSpeed = 3;
+    public bool noHeight;
+    public Vector3 offset;
 
     private Quaternion startingRot;
     private Quaternion desiredRot;
 
     private Quaternion lastRot;
+
+    private HitPoints hp;
 
     private void Start()
     {
@@ -25,6 +29,7 @@ public class LookAt : MonoBehaviour
         lastRot = transform.localRotation;
         if (target == null)
             target = Camera.main.transform;
+        hp = GetComponentInParent<HitPoints>();
     }
 
     //private void LateUpdate()
@@ -63,7 +68,7 @@ public class LookAt : MonoBehaviour
 
     private void SetRotation()
     {
-        if (target == null)
+        if (target == null || (hp != null && hp.CurrentHP <= 0))
         {
             this.desiredRot = startingRot;
             return;
@@ -91,9 +96,12 @@ public class LookAt : MonoBehaviour
 
         //transform.rotation = rot;
 
-        transform.LookAt(target);
+        if (noHeight)
+            transform.LookAt(target.position.WithY(transform.position.y));
+        else
+            transform.LookAt(target);
         
-        desiredRot = transform.localRotation;
+        desiredRot = Quaternion.Euler(transform.localEulerAngles + offset);
         
         transform.localRotation = rot;
 

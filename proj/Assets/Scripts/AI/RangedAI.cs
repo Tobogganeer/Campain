@@ -274,7 +274,11 @@ public class RangedAI : MonoBehaviour, IDamagable
         if (health.CurrentHP <= 0)
         {
             Die();
-            AddForceToRagdoll(details.direction * 10, ForceMode.Impulse);
+            AddForceToRagdoll(-details.direction * 5, ForceMode.Impulse);
+            if (details.hitObj.TryGetComponent(out Rigidbody rb))
+            {
+                rb.AddForce(details.direction * 75, ForceMode.Impulse);
+            }
         }
     }
 
@@ -283,6 +287,7 @@ public class RangedAI : MonoBehaviour, IDamagable
         AudioManager.Play(new Audio("EnemyDie").SetPosition(transform.position).SetVolume(0.5f));
         //AudioManager.Play(AudioArray.EnemyDie, transform.position, null, 10, AudioCategory.SFX, 0.5f);
         ragdoller.EnableRagdoll();
+        ragdoller.DeathTwitch(Random.Range(10f, 30f), Random.Range(2f, 6f), Random.Range(40f, 250f));
         EnemyEvents.EnemyDied(transform.position);
     }
 

@@ -8,5 +8,6 @@ public class SunDir : MonoBehaviour
     void Update()
     {
         Shader.SetGlobalVector("_SunDirection", transform.forward);
+        Shader.SetGlobalVector("_SunPosition", transform.position);
     }
 }

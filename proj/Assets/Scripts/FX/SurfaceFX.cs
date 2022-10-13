@@ -98,7 +98,7 @@ public class SurfaceFX : MonoBehaviour
 
     public static void PlayFootstepSound(SurfaceType surfaceType, Vector3 position, Foot foot)
     {
-        PlayFootstepSound(surfaceType.GetFootstepType(), position, foot);
+        //PlayFootstepSound(surfaceType.GetFootstepType(), position, foot);
     }
 
     public static void SpawnFX(SurfaceType surfaceType, Vector3 position, Quaternion rotation, Transform parent = null)

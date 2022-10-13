@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   type: 1
   fullAuto: 1
-  speedMult: 1
+  speedMult: 0.9
   jumpMult: 1
   adsMoveSpeedMult: 0.65
   adsSpeed: 1
@@ -67,63 +67,97 @@ MonoBehaviour:
   rbForce: 7
   armourPenetration: 0.6
   hitboxDamageMultipliers:
-    head: 2.5
+    head: 3.5
     chest: 1
     abdomen: 1.25
     arms: 0.65
     legs: 0.45
+  reloadSound: NP5_Reload
   attachments:
     barrels:
-    - name: Default
-      shootSound: NP5_Fire_Default
-      shootVolume: 1
-      shootMechVolume: 1
-      bulletVelocity: 550
-      recoil: {x: 9, y: 21}
-      innaccuracyMult: 1
-      damageMult: 1
-      type: 0
-    - name: Suppressed
-      shootSound: NP5_Fire_Suppressed
-      shootVolume: 0.45
-      shootMechVolume: 0.65
-      bulletVelocity: 425
-      recoil: {x: 12, y: 14}
-      innaccuracyMult: 0.9
-      damageMult: 0.9
-      type: 1
-    - name: Compensator
-      shootSound: NP5_Fire_Compensated
-      shootVolume: 0.4
-      shootMechVolume: 0.8
-      bulletVelocity: 275
-      recoil: {x: 6, y: 6}
-      innaccuracyMult: 1.2
-      damageMult: 0.7
-      type: 2
+      values:
+      - name: Default
+        key: 0
+        value:
+          name: 
+          shootSound: NP5_Fire_Default
+          shootVolume: 0.8
+          shootMechVolume: 1
+          bulletVelocity: 550
+          recoil: {x: 9, y: 21}
+          innaccuracyMult: 0
+          damageMult: 1
+          type: 0
+      - name: Suppressed
+        key: 1
+        value:
+          name: 
+          shootSound: NP5_Fire_Suppressed
+          shootVolume: 0.45
+          shootMechVolume: 0.65
+          bulletVelocity: 425
+          recoil: {x: 12, y: 14}
+          innaccuracyMult: 0
+          damageMult: 0.85
+          type: 1
+      - name: Compensator
+        key: 2
+        value:
+          name: 
+          shootSound: NP5_Fire_Compensated
+          shootVolume: 0.4
+          shootMechVolume: 0.8
+          bulletVelocity: 275
+          recoil: {x: 6, y: 6}
+          innaccuracyMult: 0
+          damageMult: 0.75
+          type: 2
     underbarrels:
-    - name: Nothing
-      type: 0
-    - name: Flashlight
-      type: 1
-    - name: Laser
-      type: 2
+      values:
+      - name: Nothing
+        key: 0
+        value:
+          name: 
+          type: 0
+      - name: Flashlight
+        key: 1
+        value:
+          name: 
+          type: 1
+      - name: Laser
+        key: 2
+        value:
+          name: 
+          type: 2
     sights:
-    - name: IronSights
-      aimPos: {x: -0.123, y: 0.02, z: -0.05}
-      fovMult: 0.65
-      recoilMult: 0.8
-      sensMult: 0.5
-      type: 0
-    - name: Holo
-      aimPos: {x: -0.123, y: 0, z: -0.08}
-      fovMult: 0.55
-      recoilMult: 0.7
-      sensMult: 0.35
-      type: 1
-    - name: Acog
-      aimPos: {x: -0.123, y: 0, z: -0.05}
-      fovMult: 0.35
-      recoilMult: 0.5
-      sensMult: 0.15
-      type: 2
+      values:
+      - name: IronSights
+        key: 0
+        value:
+          name: 
+          aimPos: {x: -0.1229, y: 0.019, z: 0}
+          fovMult: 0.7
+          recoilMult: 0.7
+          sensMult: 0.6
+          adsBlur: 23
+          type: 0
+      - name: Holo
+        key: 1
+        value:
+          name: 
+          aimPos: {x: -0.1229, y: -0.003, z: 0}
+          fovMult: 0.5
+          recoilMult: 0.6
+          sensMult: 0.4
+          adsBlur: 25
+          type: 1
+      - name: Acog
+        key: 2
+        value:
+          name: 
+          aimPos: {x: -0.1229, y: -0.002, z: 0}
+          fovMult: 0.3
+          recoilMult: 0.5
+          sensMult: 0.2
+          adsBlur: 23
+          type: 2

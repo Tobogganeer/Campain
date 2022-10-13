@@ -4,5 +4,9 @@ using UnityEngine;
 
 public class Surface : MonoBehaviour
 {
-    public SurfaceType surfaceType;
+    public SurfaceSettings settings;
+
+    public float Hardness => settings.Hardness;
+    public string FootstepSound => settings.FootstepSound;
+    public string HitSound => settings.HitSound;
 }

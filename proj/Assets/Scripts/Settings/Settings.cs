@@ -62,23 +62,25 @@ public static class Settings
 
     private static void WriteInputs()
     {
-        SaveLoad.SaveJson("inputs.json", Inputs.Profile ?? new InputProfile(), true);
+        //SaveLoad.SaveJson("inputs.json", Inputs_Old.Profile ?? new InputProfile(), true);
     }
 
     private static void ReadInputs()
     {
-        Inputs.Profile = SaveLoad.ReadJson<InputProfile>("inputs.json", true);
+        /*
+        Inputs_Old.Profile = SaveLoad.ReadJson<InputProfile>("inputs.json", true);
 
-        if (Inputs.Profile == null)
+        if (Inputs_Old.Profile == null)
         {
-            Inputs.Profile = new InputProfile();
+            Inputs_Old.Profile = new InputProfile();
             WriteInputs();
         }
+        */
     }
 
 
     public static void Apply()
-    { 
+    {
         QualityManager.SetQualityLevel(CurrentSettings.qualityLevel);
         QualityManager.SetMaxFramerate(CurrentSettings.maxFramerate);
         QualityManager.SetVSync(CurrentSettings.vsync);

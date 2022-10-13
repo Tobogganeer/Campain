@@ -76,10 +76,18 @@ public class GodRays : ScriptableRendererFeature
             ConfigureTarget(occluders.Identifier());
         }
 
+        bool firstFrame = true;
+
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             if (!occludersMaterial || !radialBlurMaterial)
                 return;
+
+            if (firstFrame)
+            {
+                firstFrame = false;
+                return;
+            }
 
             CommandBuffer cmd = CommandBufferPool.Get();
 

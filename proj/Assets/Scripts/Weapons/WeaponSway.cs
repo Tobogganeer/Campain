@@ -16,11 +16,14 @@ public class WeaponSway : MonoBehaviour
     public Transform adsObj;
 
     public Transform temp_weaponRotBone;
+    public Vector3 temp_weaponRot = new Vector3(0, 90, 0);
+    private Vector3 mouseSway;
 
     [Header("Mouse")]
     public bool invertMouse = true;
     public float mouseSwayAmount = 0.03f;
     public float mouseMaxAmount = 0.06f;
+    public float mouseSwayYMult = 2;
     public float mouseSmoothAmount = 12f;
     public float mouseRotAmount = 1f;
     public float mouseRotMaxAmount = 5f;
@@ -83,10 +86,10 @@ public class WeaponSway : MonoBehaviour
     private void MouseSway()
     {
         float invert = invertMouse ? -1 : 1;
-        Vector2 desiredMovement = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y")) * invert * mouseSwayAmount;
+        Vector2 desiredMovement = PlayerInputs.Look * (invert * mouseSwayAmount);
         //desiredMovement *= Time.deltaTime;
         desiredMovement.x = Mathf.Clamp(desiredMovement.x, -mouseMaxAmount, mouseMaxAmount);
-        desiredMovement.y = Mathf.Clamp(desiredMovement.y, -mouseMaxAmount, mouseMaxAmount);
+        desiredMovement.y = Mathf.Clamp(desiredMovement.y * mouseSwayYMult, -mouseMaxAmount, mouseMaxAmount);
 
         if (IsInADS) desiredMovement *= adsBobSwayMultiplier;
 
@@ -94,22 +97,23 @@ public class WeaponSway : MonoBehaviour
         mouseSwayObj.localPosition = Vector3.Lerp(mouseSwayObj.localPosition, desiredMovement, Time.deltaTime * mouseSmoothAmount);
 
 
-        Vector3 rotMovement = new Vector3(-Input.GetAxis("Mouse Y"), Input.GetAxis("Mouse X"), Input.GetAxis("Mouse X")) * invert * mouseRotAmount;
+        Vector3 rotMovement = new Vector3(-PlayerInputs.Look.y, PlayerInputs.Look.x, PlayerInputs.Look.x) * (invert * mouseRotAmount);
         //Debug.Log("Mouse: " + Input.GetAxis("Mouse X") + " " + Input.GetAxis("Mouse Y"));
 
         rotMovement.x = Mathf.Clamp(rotMovement.x, -mouseRotMaxAmount, mouseRotMaxAmount);
-        rotMovement.y = Mathf.Clamp(rotMovement.y, -mouseRotMaxAmount, mouseRotMaxAmount);
-        rotMovement.z = Mathf.Clamp(rotMovement.z * mouseRotZMult, -mouseRotMaxAmount * mouseRotZMult, mouseRotMaxAmount * mouseRotZMult);
+        rotMovement.y = Mathf.Clamp(-rotMovement.y, -mouseRotMaxAmount, mouseRotMaxAmount);
+        rotMovement.z = Mathf.Clamp(-rotMovement.z * mouseRotZMult, -mouseRotMaxAmount * mouseRotZMult, mouseRotMaxAmount * mouseRotZMult);
 
-        if (IsInADS) rotMovement *= adsBobSwayMultiplier * 5;
+        if (IsInADS) rotMovement *= adsBobSwayMultiplier;
 
-        mouseSwayObj.localRotation = Quaternion.Slerp(mouseSwayObj.localRotation, Quaternion.Euler(rotMovement), Time.deltaTime * mouseSmoothAmount);
+        //mouseSwayObj.localRotation = Quaternion.Slerp(mouseSwayObj.localRotation, Quaternion.Euler(rotMovement), Time.deltaTime * mouseSmoothAmount);
+        mouseSway = Vector3.Lerp(mouseSway, rotMovement, Time.deltaTime * mouseSmoothAmount);
     }
 
     private void MovementSway()
     {
         float invert = invertMovement ? -1 : 1;
-        Vector3 desiredMovement = invert * PlayerMovement.LocalVelocity * movementSwayAmount;
+        Vector3 desiredMovement = invert * movementSwayAmount * PlayerMovement.LocalVelocity;
         desiredMovement.x = Mathf.Clamp(desiredMovement.x, -movementMaxAmount, movementMaxAmount);
         desiredMovement.y = -1 * verticalMultiplier * Mathf.Clamp(desiredMovement.y,
             -movementMaxAmount * verticalMultiplier, movementMaxAmount * verticalMultiplier);
@@ -146,20 +150,21 @@ public class WeaponSway : MonoBehaviour
             float crouchingMult = PlayerMovement.Crouched ? crouchingMultiplier : 1f;
 
             float movementScale = Mathf.InverseLerp(0, PlayerMovement.instance.movementProfile.runningSpeed, velocityMag);
-            float multiplier = bobAmount * runningMult * crouchingMult * data.bobAmountMult;
+            float multiplier = bobAmount * crouchingMult * data.bobAmountMult;
             if (!PlayerMovement.Sliding)
             {
                 offset = GetMovementOffset() * multiplier;
-                rotOffset += GetMovementRot() * runningMult * crouchingMult * Mathf.Clamp01(velocityMag) * adsBobSwayMultiplier;
+                offset.x *= runningMult;
+                rotOffset += GetMovementRot() * (runningMult * crouchingMult * Mathf.Clamp01(velocityMag) * adsBobSwayMultiplier);
                 //rotOffset += bobRotAmount * SinValue * runningMult * crouchingMult;
             }
-            offset += movingOffset * Mathf.Min(velocityMag, maxMovingOffset) * movementScale;
+            offset += movingOffset * (Mathf.Min(velocityMag, maxMovingOffset) * movementScale);
         }
         else
         {
             offset = airOffset;
             float noise = Mathf.PerlinNoise(PlayerMovement.AirTime * airNoiseScale, PlayerMovement.AirTime * 2.5124f * airNoiseScale);
-            offset += new Vector3(1, 1) * noise * airNoiseInfluence;
+            offset += new Vector3(1, 1) * (noise * airNoiseInfluence);
             rotOffset += airRotOffset;
         }
 
@@ -198,6 +203,9 @@ public class WeaponSway : MonoBehaviour
     private void LateUpdate()
     {
         //temp_weaponRotBone.localRotation = Quaternion.Euler(movementBobObj.localEulerAngles * 20 + Vector3.up * 90);
+        //temp_weaponRotBone.localRotation = Quaternion.Euler(mouseSwayObj.localEulerAngles + Vector3.up * 90);
+        temp_weaponRotBone.localRotation = Quaternion.Euler(mouseSway + temp_weaponRot);
+        //temp_weaponRotBone.localRotation = mouseSwayObj.localRotation;
     }
 
     private Vector3 vec_move_left = new Vector3(-0.8f, 0.1f, 0);
@@ -218,10 +226,15 @@ public class WeaponSway : MonoBehaviour
         //    normalizedSin = 1 - normalizedSin;
         //return new Vector3(SinValue, verticalMult * Mathf.Abs(SinValue)) * mult;
         //return new Vector3(SinValue, verticalMult * moveBobCurve.Evaluate(normalizedSin));
+
+        return Functions.Lissajous(time, 0.4f, 2f / Mathf.PI);
+
+        /*
         if (SinValue < 0)
             return Vector3.Lerp(vec_move_left, vec_move_center, SinValue + 1) * NEW_BOB_MULT;
         else
             return Vector3.Lerp(vec_move_center, vec_move_right, SinValue) * NEW_BOB_MULT;
+        */
     }
 
     private Vector3 GetMovementRot()
@@ -232,7 +245,7 @@ public class WeaponSway : MonoBehaviour
             return Vector3.Lerp(vec_rot_center, vec_rot_right, SinValue) * NEW_BOB_MULT;
     }
 
-    Vector3 adsVel;
+    //Vector3 adsVel;
 
     private void ADS()
     {
@@ -244,13 +257,13 @@ public class WeaponSway : MonoBehaviour
         }
 
         WeaponData data = Weapons.Get(WeaponManager.CurrentWeaponType);
-        adsObj.localPosition = Vector3.Lerp(adsObj.localPosition, WeaponManager.CurrentWeapon.GetADSOffset() * MaxADSInfluence, Time.deltaTime * adsSpeed * data.adsSpeed);
+        adsObj.localPosition = Vector3.Lerp(adsObj.localPosition, WeaponManager.CurrentWeapon.Sight.aimPos * MaxADSInfluence, Time.deltaTime * adsSpeed * data.adsSpeed);
         //adsObj.localPosition = Vector3.SmoothDamp(adsObj.localPosition, WeaponManager.CurrentWeapon.GetADSOffset() * MaxADSInfluence, ref adsVel, 0.1f, adsSpeed * data.adsSpeed);
     }
 
     public static bool IsInADS_Method()
     {
-        bool wantsToADS = Input.GetKey(Inputs.ADS) || instance.debugAlwaysADS;
+        bool wantsToADS = PlayerInputs.ADS || instance.debugAlwaysADS;
         bool grounded = PlayerMovement.Grounded;
 
         return wantsToADS && grounded;

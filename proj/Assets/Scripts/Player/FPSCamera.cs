@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using MilkShake;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 public class FPSCamera : MonoBehaviour
 {
@@ -22,6 +24,9 @@ public class FPSCamera : MonoBehaviour
     public Transform leanTransform;
     public Transform leanWeaponTransform;
 
+    [Space]
+    public VolumeProfile depthOfFieldProfile;
+
     private float yRotation;
     private float currentLean;
     private float currentLeanMove;
@@ -31,10 +36,10 @@ public class FPSCamera : MonoBehaviour
     //public float sensitivity = 3;
     public float maxVerticalRotation = 90;
 
-    private const float SENSITIVITY_MULT = 0.1f;//3 / 50;
+    public float sensitivityMultiplier = 0.1f;//3 / 50;
     //                           Default sens / Good cam sens
 
-    private float sensitivity => CurrentSensFromSettings * SENSITIVITY_MULT;
+    private float sensitivity => CurrentSensFromSettings * sensitivityMultiplier;
 
     public static float CurrentSensFromSettings = 50;
 
@@ -59,6 +64,9 @@ public class FPSCamera : MonoBehaviour
     [Space]
     public float recoilDecaySpeed = 10;
     private static Vector2 desiredRecoil;
+    private Vector2 appliedRecoil;
+    private float recoilResetTimer;
+    private const float RecoilResetTime = 0.5f;
 
     public Shaker weaponHolderShaker;
 
@@ -70,6 +78,7 @@ public class FPSCamera : MonoBehaviour
     [Space]
     public float sprintHorShake = 0.18f;
     public float sprintVertShake = 0.2f;
+    public float sprintShakePosMult = 1f;
     public float sprintRunMul = 4;
     public Transform sprintTransform;
 
@@ -89,30 +98,81 @@ public class FPSCamera : MonoBehaviour
         //if (Input.GetKeyDown(KeyCode.Mouse0))
         //    Shake(Input.GetKey(Inputs.ADS) ? debugAimedShake : debugShake, Input.GetKey(Inputs.ADS) ? debugAimedWeaponShake : debugWeaponShake);
 
+        Recoil();
         MouseLook();
 
         VerticalMovement();
         Lean();
         SprintShake();
+        ADSBlur();
     }
 
-    private void MouseLook()
+    private void Recoil()
     {
+        recoilResetTimer -= Time.deltaTime;
         desiredRecoil = Vector2.Lerp(desiredRecoil, Vector2.zero, Time.deltaTime * recoilDecaySpeed);
+        appliedRecoil.x += desiredRecoil.x * Time.deltaTime;
+        if (yRotation - desiredRecoil.y * Time.deltaTime < -maxVerticalRotation)
+            appliedRecoil.y += maxVerticalRotation + yRotation;
+        else
+            appliedRecoil.y += desiredRecoil.y * Time.deltaTime;
         yRotation -= desiredRecoil.y * Time.deltaTime;
-        playerBody.Rotate(Vector3.up * desiredRecoil.x * Time.deltaTime);
+        playerBody.Rotate(Vector3.up * (desiredRecoil.x * Time.deltaTime));
 
         if (desiredRecoil.y < 0) desiredRecoil.y = 0;
 
-        float x = Input.GetAxisRaw("Mouse X");
-        float y = Input.GetAxisRaw("Mouse Y");
+        //if (recoilResetTimer < 0)
+        //if (desiredRecoil.magnitude < 0.01f)
+        //{
+        Vector2 apply = RemoveRecoil(ref appliedRecoil);
+        yRotation += apply.y;
+        playerBody.Rotate(Vector3.up * -apply.x);
+        //}
+    }
 
-        float adsSens = WeaponManager.InADS ? WeaponManager.CurrentWeapon.GetSensitivityMult() : 1f;
+    private Vector2 RemoveRecoil(ref Vector2 value)
+    {
+        Vector2 val = value;
+        float slow = recoilResetTimer > 0 ? Remap.Float(recoilResetTimer, 0, RecoilResetTime, 1f, 0f) : 1f;
+        value = Vector2.MoveTowards(value, Vector2.zero, RecoilFactor() * Time.deltaTime * recoilDecaySpeed * slow);
+        return val - value;
+    }
 
-        playerBody.Rotate(Vector3.up * x * sensitivity * adsSens);
+    private void SubRecoilX(float mouseX)
+    {
+        if (appliedRecoil.x == 0) return;
+
+        float sign = Mathf.Sign(appliedRecoil.x);
+
+        if (sign != Mathf.Sign(mouseX))
+        {
+            appliedRecoil.x += mouseX;
+            if (Mathf.Sign(appliedRecoil.x) != sign)
+                appliedRecoil.x = 0;
+        }
+    }
+
+    float RecoilFactor() => Mathf.Pow((-recoilResetTimer + RecoilResetTime) * 2f, 2);
+
+    private void MouseLook()
+    {
+        //float x = Input.GetAxisRaw("Mouse X");
+        //float y = Input.GetAxisRaw("Mouse Y");
+        float x = PlayerInputs.Look.x;
+        float y = PlayerInputs.Look.y;
+
+        float adsSens = WeaponManager.InADS ? WeaponManager.CurrentWeapon.Sight.sensMult : 1f;
+
+        float xVal = x * sensitivity * adsSens;
+        float yVal = y * sensitivity * adsSens;
+
+        SubRecoilX(xVal);
+        appliedRecoil.y = Mathf.Max(appliedRecoil.y + Mathf.Min(yVal, 0), 0f);
+
+        playerBody.Rotate(Vector3.up * xVal);
         // Rotates the body horizontally
 
-        yRotation = Mathf.Clamp(yRotation - y * sensitivity * adsSens, -maxVerticalRotation, maxVerticalRotation);
+        yRotation = Mathf.Clamp(yRotation - yVal, -maxVerticalRotation, maxVerticalRotation);
         //float clampedRotWithRecoil = yRotation;
         float clampedRotWithRecoil = Mathf.Clamp(yRotation, -maxVerticalRotation, maxVerticalRotation);
 
@@ -133,11 +193,11 @@ public class FPSCamera : MonoBehaviour
 
     private void Lean()
     {
-        float lean = 0;
+        float lean = PlayerInputs.Lean;
         float leanMove = 0;
 
-        if (Input.GetKey(Inputs.LeanLeft)) lean += 1f;
-        if (Input.GetKey(Inputs.LeanRight)) lean -= 1f;
+        //if (Input.GetKey(Inputs.LeanLeft)) lean += 1f;
+        //if (Input.GetKey(Inputs.LeanRight)) lean -= 1f;
 
         if (Mathf.Abs(lean) > 0.2f)
         {
@@ -167,17 +227,39 @@ public class FPSCamera : MonoBehaviour
 
     private void SprintShake()
     {
-        if (!PlayerMovement.Grounded) return;
+        if (!PlayerMovement.Grounded)
+        {
+            sprintTransform.localRotation = Quaternion.Slerp(sprintTransform.localRotation, Quaternion.identity, Time.deltaTime * 3);
+            sprintTransform.localPosition = Vector3.Lerp(sprintTransform.localPosition, Vector3.zero, Time.deltaTime * 3);
+            return;
+        }
 
         float sin = WeaponSway.SinValue;
+        //Debug.Log(sin);
         float vert = sin * sin * sin;
         Vector3 desired = new Vector3(Mathf.Abs(vert) * sprintVertShake, -sin * sprintHorShake);
+        Vector3 desiredPos = desired * sprintShakePosMult;
         //Vector3 desired = Vector3.zero;
 
         if (PlayerMovement.Running)
             desired *= sprintRunMul;
 
         sprintTransform.localRotation = Quaternion.Slerp(sprintTransform.localRotation, Quaternion.Euler(desired), Time.deltaTime * 10);
+        sprintTransform.localPosition = Vector3.Lerp(sprintTransform.localPosition, desiredPos, Time.deltaTime * 10);
+    }
+
+    private void ADSBlur()
+    {
+        if (depthOfFieldProfile == null) return;
+
+        if (!depthOfFieldProfile.TryGet(out DepthOfField dof)) return;
+
+        float desired = 3; // small, default focal length, could use 0
+
+        if (WeaponManager.InADS)
+            desired = WeaponManager.CurrentWeapon.Sight.adsBlur;
+
+        dof.focalLength.value = Mathf.Lerp(dof.focalLength.value, desired, Time.deltaTime * 5f);
     }
 
     public void LookAt_Local(Vector3 point)
@@ -215,6 +297,7 @@ public class FPSCamera : MonoBehaviour
     public static void AddRecoil(Vector2 amount)
     {
         desiredRecoil += amount;
+        instance.recoilResetTimer = RecoilResetTime;
     }
 
 

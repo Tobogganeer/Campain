@@ -46,12 +46,14 @@ public class WeaponData : ScriptableObject
     public float armourPenetration;
     public Hitbox.DamageRegions hitboxDamageMultipliers;
 
+    [Space]
+    public string reloadSound;
 
     [Space]
     public Attachments attachments;
 
     private void OnValidate()
     {
-        attachments.Inspector_AssignNames();
+        attachments.AssignNamesAndTypes();
     }
 }

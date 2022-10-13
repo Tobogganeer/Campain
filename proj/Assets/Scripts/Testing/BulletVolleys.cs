@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class BulletVolleys : MonoBehaviour
 {
@@ -35,7 +36,7 @@ public class BulletVolleys : MonoBehaviour
             Bullet.Create(bulletOrigin, dir, weapon);
         }
 
-        if (Input.GetKeyDown(KeyCode.L))
+        if (Keyboard.current.lKey.wasPressedThisFrame)
         {
             bullets = Random.Range(minBullets, maxBullets);
             Vector3 randomDir = Random.onUnitSphere;

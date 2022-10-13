@@ -96,7 +96,7 @@ public class PlayerMovement : MonoBehaviour
 
     // Properties
 
-    private bool CanRun => Input.GetKey(Inputs.Sprint) && !crouched && Inputs.VerticalNoSmooth > 0.2f && !WeaponManager.InADS;
+    private bool CanRun => PlayerInputs.Sprint && !crouched && PlayerInputs.Movement.y > 0.2f && !WeaponManager.InADS;
 
     public static bool Crouched => instance.crouched;
     public static bool Grounded => instance.grounded;
@@ -128,8 +128,6 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
-        Inputs.Update();
-
         IncrementValues(Time.deltaTime);
 
         UpdateCrouched();
@@ -209,8 +207,8 @@ public class PlayerMovement : MonoBehaviour
         const float SlopeSpeedIncrease = 5;
         const float MaxSlopeTime = SlopeSpeedIncrease * 4.5f;
 
-        Vector2 input = new Vector2(Inputs.HorizontalNoSmooth, Inputs.VerticalNoSmooth);
-        input.Normalize();
+        Vector2 input = PlayerInputs.Movement;
+        //input.Normalize(); // Already normalized from InputSystem
 
         desiredVelocity = transform.right * input.x + transform.forward * input.y;
         desiredVelocity *= cur_speed;
@@ -360,7 +358,7 @@ public class PlayerMovement : MonoBehaviour
             jumpCharge = 0; // cancel any pending jump
         }
 
-        if (grounded && Input.GetKeyDown(Inputs.Jump) && timeSinceLastJump > JustJumpedThreshold && timeOnSlope < 0.2f && jumpCharge <= 0)
+        if (grounded && PlayerInputs.Jump && timeSinceLastJump > JustJumpedThreshold && timeOnSlope < 0.2f && jumpCharge <= 0)
         {
             //float timeMult = crouched ? 2f : 1f;
             jumpCharge = JumpChargeTime;// * timeMult;
@@ -505,7 +503,7 @@ public class PlayerMovement : MonoBehaviour
         float value = Moving && Running ? NormalizedSpeed : 0f;
         float runMultiplier = value * 0.2f; // Will go between 0 and 0.2
 
-        float aimMult = WeaponManager.InADS ? WeaponManager.CurrentWeapon.GetADSFov() : 1f;
+        float aimMult = WeaponManager.InADS ? WeaponManager.CurrentWeapon.Sight.fovMult : 1f;
 
         CameraFOV.Set(aimMult + runMultiplier);
     }
@@ -555,7 +553,7 @@ public class PlayerMovement : MonoBehaviour
             crouched = true;
 
         else
-            crouched = Input.GetKey(Inputs.Crouch) && jumpCharge <= 0;
+            crouched = PlayerInputs.Crouch && jumpCharge <= 0;
 
         crouched |= forceCrouch;
 
@@ -590,8 +588,7 @@ public class PlayerMovement : MonoBehaviour
         //grounded = !onSlope;
 
         wasGrounded = grounded;
-        RaycastHit hit;
-        grounded = Physics.SphereCast(new Ray(transform.position, Vector3.down), GroundedSphereRadius, out hit, GroundedSphereDist, groundLayerMask)
+        grounded = Physics.SphereCast(new Ray(transform.position, Vector3.down), GroundedSphereRadius, out RaycastHit hit, GroundedSphereDist, groundLayerMask)
             || Physics.Raycast(transform.position, Vector3.down, out hit, GroundedRayDist, groundLayerMask);
 
         if (grounded)
